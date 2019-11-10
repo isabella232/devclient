@@ -14,7 +14,7 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 {
 	Glib::RefPtr<Gio::SocketAddress> retaddr;
 
-	m_context.set_interface(INTERFACE_A);
+	m_context.set_interface(INTERFACE_C);
 
 	if (m_context.open(device.vid, device.pid, device.description,
 	    device.serial) != 0)
@@ -79,6 +79,9 @@ Uart::usb_worker()
 		ret = m_context.read(buffer, sizeof(buffer));
 		if (ret < 0 || !m_running)
 			break;
+
+		if (ret > 0)
+			Logger::debug("read {} bytes from USB", ret);
 
 		for (auto &i: m_connections)
 			i->get_output_stream()->write(buffer, ret);

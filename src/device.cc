@@ -25,6 +25,7 @@ DeviceEnumerator::enumerate()
 		});
 	}
 
+	delete devices;
 	return (result);
 }
 

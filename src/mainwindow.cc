@@ -3,7 +3,9 @@
 //
 
 #include <string>
+#include <fmt/format.h>
 #include <formrow.hh>
+#include <utils.hh>
 #include <deviceselect.hh>
 #include <mainwindow.hh>
 
@@ -27,6 +29,9 @@ MainWindow::MainWindow():
 		throw std::runtime_error("No device selected");
 
 	m_device = dialog.get_selected_device().value();
+	m_i2c = new I2C(m_device, 100000);
+	m_gpio = new Gpio(m_device);
+	m_gpio->set(0);
 }
 
 MainWindow::~MainWindow()
@@ -43,7 +48,9 @@ SerialTab::SerialTab(const Device &dev):
     m_status_row("Status"),
     m_clients(1),
     m_start("Start"),
-    m_stop("Stop")
+    m_stop("Stop"),
+    m_terminal("Launch terminal"),
+    m_label("Connected clients:")
 {
 
 	m_address_row.get_widget().set_text("127.0.0.1");
@@ -54,21 +61,30 @@ SerialTab::SerialTab(const Device &dev):
 	m_baud_row.get_widget().append("57600");
 	m_baud_row.get_widget().append("115200");
 	m_baud_row.get_widget().set_active_text("115200");
+	m_status_row.get_widget().set_editable(false);
 	m_clients.set_column_title(0, "Client address");
 	m_scroll.add(m_clients);
+
 	m_start.signal_clicked().connect(sigc::mem_fun(*this,
 	    &SerialTab::start_clicked));
+
 	m_stop.signal_clicked().connect(sigc::mem_fun(*this,
 	    &SerialTab::stop_clicked));
 
+	m_terminal.signal_clicked().connect(sigc::mem_fun(*this,
+	    &SerialTab::launch_terminal_clicked));
+
 	m_buttons.pack_start(m_start);
 	m_buttons.pack_start(m_stop);
+	m_buttons.pack_start(m_terminal);
 
 	set_border_width(5);
 	pack_start(m_address_row, false, true);
 	pack_start(m_port_row, false, true);
 	pack_start(m_baud_row, false, true);
 	pack_start(m_status_row, false, true);
+	pack_start(m_separator, false, true);
+	pack_start(m_label, false, true);
 	pack_start(m_scroll, true, true);
 	pack_start(m_buttons, false, true);
 }
@@ -90,7 +106,7 @@ SerialTab::start_clicked()
 	m_uart->disconnected.connect(sigc::mem_fun(*this,
 	    &SerialTab::client_disconnected));
 	m_uart->start();
-	m_status_row.get_widget().set_label("Running");
+	m_status_row.get_widget().set_text("Running");
 }
 
 void
@@ -99,7 +115,19 @@ SerialTab::stop_clicked()
 	m_uart->stop();
 	delete m_uart;
 
-	m_status_row.get_widget().set_label("Stopped");
+	m_status_row.get_widget().set_text("Stopped");
+}
+
+void
+SerialTab::launch_terminal_clicked()
+{
+	std::vector<std::string> argv {
+		"x-terminal-emulator",
+		"-e",
+		fmt::format("telnet 127.0.0.1 {}", m_port_row.get_widget().get_text())
+	};
+
+	Glib::spawn_async("/", argv, Glib::SpawnFlags::SPAWN_SEARCH_PATH);
 }
 
 void
@@ -134,11 +162,28 @@ JtagTab::JtagTab(const Device &dev):
     m_board_row("Board type"),
     m_status_row("Status"),
     m_start("Start"),
-    m_stop("Stop")
+    m_stop("Stop"),
+    m_bypass("J-Link bypass mode")
 {
+	m_address_row.get_widget().set_text("127.0.0.1");
+	m_ocd_port_row.get_widget().set_text("4444");
+	m_gdb_port_row.get_widget().set_text("3333");
+
+	m_textbuffer = Gtk::TextBuffer::create();
+	m_textview.set_editable(false);
+	m_textview.set_buffer(m_textbuffer);
+	m_textview.set_monospace(true);
 	m_scroll.add(m_textview);
 	m_buttons.pack_start(m_start);
 	m_buttons.pack_start(m_stop);
+	m_buttons.pack_start(m_bypass);
+
+	m_start.signal_clicked().connect(sigc::mem_fun(*this,
+	    &JtagTab::start_clicked));
+	m_stop.signal_clicked().connect(sigc::mem_fun(*this,
+	    &JtagTab::stop_clicked));
+	m_bypass.signal_clicked().connect(sigc::mem_fun(*this,
+	    &JtagTab::bypass_clicked));
 
 	set_border_width(5);
 	pack_start(m_address_row, false, true);
@@ -148,6 +193,38 @@ JtagTab::JtagTab(const Device &dev):
 	pack_start(m_status_row, false, true);
 	pack_start(m_scroll, true, true);
 	pack_start(m_buttons, false, true);
+}
+
+void
+JtagTab::output_ready(const std::string &output)
+{
+	Glib::ustring text = m_textbuffer->get_text();
+
+	text += output;
+	m_textbuffer->set_text(text);
+	m_textview.scroll_to(m_textbuffer->get_insert());
+}
+
+void
+JtagTab::start_clicked()
+{
+	Glib::RefPtr<Gio::InetAddress> addr;
+
+	addr = Gio::InetAddress::create(m_address_row.get_widget().get_text());
+	m_server = new JtagServer(addr, 1234, 1235, "foo");
+	m_server->output_produced.connect(sigc::mem_fun(*this, &JtagTab::output_ready));
+	m_server->start();
+}
+
+void
+JtagTab::stop_clicked()
+{
+}
+
+void
+JtagTab::bypass_clicked()
+{
+	JtagServer::bypass(m_device);
 }
 
 EepromTab::EepromTab(const Device &dev):

@@ -2,6 +2,7 @@
 // Created by jakub on 25.10.2019.
 //
 
+#include <string>
 #include <fmt/format.h>
 #include <log.hh>
 
