@@ -8,7 +8,7 @@
 #include <vector>
 #include <eeprom.hh>
 
-#define EEPROM_24C256_ADDRESS_RD	0x
+#define EEPROM_24C256_ADDRESS_RD	0xa1
 #define EEPROM_24C256_ADDRESS_WR	0xa0
 #define EEPROM_SIZE			32768
 
