@@ -9,7 +9,7 @@
 #include <device.hh>
 #include <uart.hh>
 #include <i2c.hh>
-#include <eeprom/24c256.hh>
+#include <eeprom/24c.hh>
 #include <gpio.hh>
 #include <utils.hh>
 #include <mainwindow.hh>
@@ -101,12 +101,10 @@ main(int argc, char *const argv[])
 	if (eeprom_read) {
 		dev = *DeviceEnumerator::find_by_serial(serial);
 		I2C i2c(dev, 300000);
-		Eeprom24c256 eeprom(i2c);
+		Eeprom24c eeprom(i2c);
 		std::vector<uint8_t> data;
 
-		eeprom.write(0, { 0xde, 0xad, 0xbe, 0xef });
-		sleep(1);
-		eeprom.read(0, 128, data);
+		eeprom.read(0, 3, data);
 		hex_dump(data.data(), data.size(), std::cout, 16);
 
 		return (0);

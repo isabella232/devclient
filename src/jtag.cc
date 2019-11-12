@@ -27,7 +27,7 @@ JtagServer::start()
 		"test.conf"
 	};
 
-	Glib::spawn_async_with_pipes("/", argv,
+	Glib::spawn_async_with_pipes("/tmp", argv,
 	    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
 	    Glib::SlotSpawnChildSetup(), &pid, nullptr,
 	    &stdout_fd, &stderr_fd);

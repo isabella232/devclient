@@ -5,6 +5,7 @@
 #ifndef DEVCLIENT_EEPROM_HH
 #define DEVCLIENT_EEPROM_HH
 
+#include <i2c.hh>
 #include <eeprom.hh>
 
 class Eeprom

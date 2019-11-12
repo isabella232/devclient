@@ -6,13 +6,15 @@
 #include <fmt/format.h>
 #include <formrow.hh>
 #include <utils.hh>
+#include <dtb.hh>
 #include <deviceselect.hh>
+#include <eeprom/24c.hh>
 #include <mainwindow.hh>
 
 MainWindow::MainWindow():
-    m_uart_tab(m_device),
-    m_jtag_tab(m_device),
-    m_eeprom_tab(m_device)
+    m_uart_tab(this, m_device),
+    m_jtag_tab(this, m_device),
+    m_eeprom_tab(this, m_device)
 {
 	DeviceSelectDialog dialog;
 
@@ -39,7 +41,7 @@ MainWindow::~MainWindow()
 
 }
 
-SerialTab::SerialTab(const Device &dev):
+SerialTab::SerialTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
     m_device(dev),
     m_address_row("Listen address"),
@@ -50,7 +52,8 @@ SerialTab::SerialTab(const Device &dev):
     m_start("Start"),
     m_stop("Stop"),
     m_terminal("Launch terminal"),
-    m_label("Connected clients:")
+    m_label("Connected clients:"),
+    m_parent(parent)
 {
 
 	m_address_row.get_widget().set_text("127.0.0.1");
@@ -153,7 +156,7 @@ SerialTab::client_disconnected(Glib::RefPtr<Gio::SocketAddress> addr)
 	});
 }
 
-JtagTab::JtagTab(const Device &dev):
+JtagTab::JtagTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
     m_device(dev),
     m_address_row("Listen address"),
@@ -163,7 +166,8 @@ JtagTab::JtagTab(const Device &dev):
     m_status_row("Status"),
     m_start("Start"),
     m_stop("Stop"),
-    m_bypass("J-Link bypass mode")
+    m_bypass("J-Link bypass mode"),
+    m_parent(parent)
 {
 	m_address_row.get_widget().set_text("127.0.0.1");
 	m_ocd_port_row.get_widget().set_text("4444");
@@ -227,19 +231,99 @@ JtagTab::bypass_clicked()
 	JtagServer::bypass(m_device);
 }
 
-EepromTab::EepromTab(const Device &dev):
+EepromTab::EepromTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
     m_device(dev),
     m_read("Read"),
     m_write("Write"),
-    m_save("Save buffer to file")
+    m_save("Save buffer to file"),
+    m_parent(parent)
 {
+	m_textbuffer = Gtk::TextBuffer::create();
+	m_textview.set_buffer(m_textbuffer);
+	m_textview.set_monospace(true);
 	m_scroll.add(m_textview);
 	m_buttons.pack_start(m_read);
 	m_buttons.pack_start(m_write);
 	m_buttons.pack_start(m_save);
 
+	m_textbuffer->set_text(
+	    "/dts-v1/;\n"
+	    "/ {\n"
+	    "\tmodel = \"UNNAMED\";\n"
+	    "\tserial = \"INVALID\";\n"
+	    "\tethaddr-eth0 = [00 00 00 00 00 00];\n"
+	    "};");
+
+	m_read.signal_clicked().connect(sigc::mem_fun(*this,
+	    &EepromTab::read_clicked));
+	m_write.signal_clicked().connect(sigc::mem_fun(*this,
+	    &EepromTab::write_clicked));
+
 	set_border_width(5);
 	pack_start(m_scroll, true, true);
 	pack_start(m_buttons, false, true);
 }
+
+void
+EepromTab::write_clicked()
+{
+	m_textual = std::make_shared<std::string>(m_textbuffer->get_text());
+	m_blob = std::make_shared<std::vector<uint8_t>>();
+	m_dtb = std::make_shared<DTB>(m_textual, m_blob);
+
+	m_dtb->compile(sigc::mem_fun(*this, &EepromTab::compile_done));
+}
+
+void
+EepromTab::read_clicked()
+{
+	Eeprom24c eeprom(*m_parent->m_i2c);
+
+	m_textual = std::make_shared<std::string>();
+	m_blob = std::make_shared<std::vector<uint8_t>>();
+	m_dtb = std::make_shared<DTB>(m_textual, m_blob);
+
+	eeprom.read(0, 4096, *m_blob);
+
+	m_dtb->decompile(sigc::mem_fun(*this, &EepromTab::decompile_done));
+}
+
+
+void
+EepromTab::compile_done(bool ok, int size, const std::string &errors)
+{
+
+	if (ok) {
+		Gtk::MessageDialog dlg(*m_parent, fmt::format(
+		    "Compilation and flashing done (size: {} bytes)", size));
+
+		Eeprom24c eeprom(*m_parent->m_i2c);
+		eeprom.write(0, *m_blob);
+		dlg.run();
+	} else {
+		Gtk::MessageDialog dlg(*m_parent, "Compile errors!");
+
+		dlg.set_secondary_text(errors);
+		dlg.run();
+	}
+}
+
+void
+EepromTab::decompile_done(bool ok, int size, const std::string &errors)
+{
+
+	if (ok) {
+		Gtk::MessageDialog dlg(*m_parent, fmt::format(
+		    "Reading done (size: {} bytes)", size));
+
+		dlg.run();
+		m_textbuffer->set_text(*m_textual);
+	} else {
+		Gtk::MessageDialog dlg(*m_parent, "Read errors!");
+
+		dlg.set_secondary_text(errors);
+		dlg.run();
+	}
+}
+

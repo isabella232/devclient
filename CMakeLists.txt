@@ -24,6 +24,7 @@ add_executable(devclient
         src/gpio.cc
         src/device.cc
         src/log.cc
+        src/dtb.cc
         src/deviceselect.cc
         src/mainwindow.cc)
 

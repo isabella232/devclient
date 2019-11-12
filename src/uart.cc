@@ -93,6 +93,7 @@ Uart::socket_worker(const Glib::RefPtr<Gio::SocketConnection> &conn,
     const Glib::RefPtr<Glib::Object> &source)
 {
 	Glib::RefPtr<Gio::InputStream> istream;
+	Glib::RefPtr<Gio::OutputStream> ostream;
 	uint8_t buffer[BUFSIZE];
 	ssize_t ret;
 	int written;
@@ -101,8 +102,12 @@ Uart::socket_worker(const Glib::RefPtr<Gio::SocketConnection> &conn,
 	    conn->get_remote_address()->to_string());
 
 	istream = conn->get_input_stream();
+	ostream = conn->get_output_stream();
 	m_connections.push_back(conn);
 	connected.emit(conn->get_remote_address());
+
+	/* Disable local echo */
+	ostream->write("\xFF\xFB\x01\xFF\xFB\x03");
 
 	for (;;) {
 		ret = istream->read(buffer, sizeof(buffer));
