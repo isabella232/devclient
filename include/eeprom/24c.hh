@@ -30,7 +30,6 @@ public:
 		m_i2c.write({ EEPROM_24C256_ADDRESS_RD });
 		m_i2c.read(length, data);
 		m_i2c.stop();
-		data.erase(data.begin());
 	}
 
 	void write(uint16_t offset, const std::vector<uint8_t> &data)

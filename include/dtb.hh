@@ -21,8 +21,8 @@ public:
 
 protected:
 	void run_dtc(bool compile, const SlotDone &done);
-	bool output_ready(Glib::IOCondition condition);
-	bool error_ready(Glib::IOCondition condition);
+	void output_ready(Glib::RefPtr<Gio::AsyncResult> &result);
+	void error_ready(Glib::RefPtr<Gio::AsyncResult> &result);
 	void child_exited(Glib::Pid pid, int code);
 
 	Glib::RefPtr<Gio::UnixOutputStream> m_in;

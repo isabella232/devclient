@@ -104,7 +104,7 @@ main(int argc, char *const argv[])
 		Eeprom24c eeprom(i2c);
 		std::vector<uint8_t> data;
 
-		eeprom.read(0, 3, data);
+		eeprom.read(0, 4096, data);
 		hex_dump(data.data(), data.size(), std::cout, 16);
 
 		return (0);

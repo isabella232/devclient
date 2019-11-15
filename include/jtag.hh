@@ -11,8 +11,9 @@
 class JtagServer
 {
 public:
-	JtagServer(Glib::RefPtr<Gio::InetAddress>, uint16_t gdb_port,
-	    uint16_t ocd_port, const std::string &board_type);
+	JtagServer(const Device &device, Glib::RefPtr<Gio::InetAddress>,
+	    uint16_t gdb_port, uint16_t ocd_port,
+	    const std::string &board_type);
 	void start();
 	void stop();
 	static void bypass(const Device &device);
@@ -24,8 +25,10 @@ protected:
 	bool output_ready(Glib::IOCondition cond,
 	    Glib::RefPtr<Gio::UnixInputStream> stream);
 
+	const Device &m_device;
 	uint16_t m_ocd_port;
 	uint16_t m_gdb_port;
+	std::string m_board_type;
 	Glib::Pid m_pid;
 	Glib::RefPtr<Gio::UnixInputStream> m_out;
 	Glib::RefPtr<Gio::UnixInputStream> m_err;

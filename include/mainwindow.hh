@@ -39,8 +39,8 @@ protected:
 	Gtk::Button m_start;
 	Gtk::Button m_stop;
 	Gtk::Button m_terminal;
-	Uart *m_uart;
 	MainWindow *m_parent;
+	std::shared_ptr<Uart> m_uart;
 	const Device &m_device;
 };
 
@@ -58,7 +58,7 @@ protected:
 	FormRow<Gtk::Entry> m_address_row;
 	FormRow<Gtk::Entry> m_gdb_port_row;
 	FormRow<Gtk::Entry> m_ocd_port_row;
-	FormRow<Gtk::Entry> m_board_row;
+	FormRow<Gtk::ComboBoxText> m_board_row;
 	FormRow<Gtk::Entry> m_status_row;
 	Glib::RefPtr<Gtk::TextBuffer> m_textbuffer;
 	Gtk::ScrolledWindow m_scroll;
@@ -67,7 +67,7 @@ protected:
 	Gtk::Button m_start;
 	Gtk::Button m_stop;
 	Gtk::Button m_bypass;
-	JtagServer *m_server;
+	std::shared_ptr<JtagServer> m_server;
 	MainWindow *m_parent;
 	const Device &m_device;
 };

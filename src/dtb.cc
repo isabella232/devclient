@@ -47,13 +47,8 @@ void DTB::run_dtc(bool compile, const SlotDone &done)
 	m_out = Gio::UnixInputStream::create(stdout_fd, true);
 	m_err = Gio::UnixInputStream::create(stderr_fd, true);
 
-	Glib::signal_io().connect(
-	    sigc::mem_fun(*this, &DTB::output_ready),
-	    stdout_fd, Glib::IOCondition::IO_IN);
-
-	Glib::signal_io().connect(
-	    sigc::mem_fun(*this, &DTB::error_ready),
-	    stderr_fd, Glib::IOCondition::IO_IN);
+	m_out->read_bytes_async(1024, sigc::mem_fun(*this, &DTB::output_ready));
+	m_err->read_bytes_async(1024, sigc::mem_fun(*this, &DTB::error_ready));
 
 	Glib::signal_child_watch().connect(
 	    sigc::mem_fun(*this, &DTB::child_exited),
@@ -80,42 +75,42 @@ DTB::decompile(const DTB::SlotDone &done)
 	run_dtc(false, done);
 }
 
-bool
-DTB::output_ready(Glib::IOCondition condition)
+void
+DTB::output_ready(Glib::RefPtr<Gio::AsyncResult> &result)
 {
-	ssize_t ret;
-	uint8_t buffer[1024];
+	Glib::RefPtr<Glib::Bytes> data;
+	const uint8_t *buffer;
+	size_t len;
 
-	ret = m_out->read(buffer, sizeof(buffer));
-	if (ret == 0)
-		return (false);
+	data = m_out->read_bytes_finish(result);
+	buffer = static_cast<const uint8_t *>(data->get_data(len));
 
-	if (ret < 0)
-		return (false);
+	if (len == 0)
+		return;
 
 	if (m_compile)
-		m_dtb->insert(m_dtb->end(), &buffer[0], &buffer[ret]);
+		m_dtb->insert(m_dtb->end(), &buffer[0], &buffer[len]);
 	else
-		m_dts->insert(m_dts->end(), &buffer[0], &buffer[ret]);
+		m_dts->insert(m_dts->end(), &buffer[0], &buffer[len]);
 
-	return (true);
+	m_out->read_bytes_async(1024, sigc::mem_fun(*this, &DTB::output_ready));
 }
 
-bool
-DTB::error_ready(Glib::IOCondition condition)
+void
+DTB::error_ready(Glib::RefPtr<Gio::AsyncResult> &result)
 {
-	ssize_t ret;
-	uint8_t buffer[1024];
+	Glib::RefPtr<Glib::Bytes> data;
+	const uint8_t *buffer;
+	size_t len;
 
-	ret = m_err->read(buffer, sizeof(buffer));
-	if (ret == 0)
-		return (false);
+	data = m_err->read_bytes_finish(result);
+	buffer = static_cast<const uint8_t *>(data->get_data(len));
 
-	if (ret < 0)
-		return (false);
+	if (len == 0)
+		return;
 
-	m_errors.insert(m_errors.end(), &buffer[0], &buffer[ret]);
-	return (true);
+	m_errors.insert(m_errors.end(), &buffer[0], &buffer[len]);
+	m_err->read_bytes_async(1024, sigc::mem_fun(*this, &DTB::error_ready));
 }
 
 void

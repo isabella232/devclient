@@ -62,6 +62,13 @@ void
 I2C::read(size_t nbytes, std::vector<uint8_t> &result)
 {
 	size_t i;
+	uint8_t rd;
+
+	/*
+	 * Don't know why this is needed, but we're ending up with one
+	 * extra byte in front of the read buffer after read
+	 */
+	m_context.read(&rd, 1);
 
 	for (i = 0; i < nbytes; i++)
 		result.push_back(read_byte(i != nbytes - 1));
@@ -129,11 +136,12 @@ uint8_t
 I2C::read_byte(bool ack)
 {
 	uint8_t rd;
+	uint8_t ackbyte = static_cast<uint8_t>(ack ? 0 : 0xff);
 	const uint8_t cmd[] = {
 	    SET_BITS_LOW, 0, SCL | WP,
 	    MPSSE_DO_READ | MPSSE_READ_NEG, 0, 0,
 	    SET_BITS_LOW, 0, OUT_PINS,
-	    MPSSE_DO_WRITE | MPSSE_WRITE_NEG | MPSSE_BITMODE, 0, static_cast<uint8_t>(ack ? 0 : 0xff),
+	    MPSSE_DO_WRITE | MPSSE_WRITE_NEG | MPSSE_BITMODE, 0, ackbyte,
 	    SET_BITS_LOW, 0, OUT_PINS,
 	    SEND_IMMEDIATE
 	};
