@@ -7,9 +7,9 @@ devclient:
     - ubuntu
 
   script:
-    - mkdir build
-    - cd build && cmake ..
-    - cd build && make package
+    - mkdir build && cd build
+    - cmake ..
+    - make package
   artifacts:
     paths:
       - build/*.deb
