@@ -27,7 +27,6 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 		throw std::runtime_error("Failed to set the baud rate");
 
 	m_socket_service = Gio::ThreadedSocketService::create(10);
-	m_socket_service->reference();
 	m_socket_service->add_address(
 	    addr,
 	    Gio::SocketType::SOCKET_TYPE_STREAM,
@@ -43,7 +42,6 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 Uart::~Uart()
 {
 	stop();
-	m_socket_service->unreference();
 }
 
 void
@@ -52,9 +50,10 @@ Uart::start()
 	if (m_running)
 		return;
 
-	m_running = true;
 	m_socket_service->start();
 	m_usb_worker = std::thread(&Uart::usb_worker, this);
+	m_running = true;
+	Logger::debug("UART: started");
 }
 
 void
@@ -65,8 +64,10 @@ Uart::stop()
 
 	m_running = false;
 	m_socket_service->stop();
-	m_usb_worker.join();
+	m_socket_service->close();
 	m_context.close();
+	m_usb_worker.join();
+	Logger::debug("UART: stopped");
 }
 
 void

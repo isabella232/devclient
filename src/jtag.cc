@@ -13,8 +13,14 @@ JtagServer::JtagServer(const Device &device, Glib::RefPtr<Gio::InetAddress>,
     m_device(device),
     m_ocd_port(ocd_port),
     m_gdb_port(gdb_port),
-    m_board_type(board_type)
+    m_board_type(board_type),
+    m_running(false)
 {
+}
+
+JtagServer::~JtagServer()
+{
+	stop();
 }
 
 void
@@ -30,13 +36,19 @@ JtagServer::start()
 		"-c", "tcl_port disabled",
 		"-c", "interface ftdi",
 		"-c", "transport select jtag",
-		"-c", "adapter_khz 1000",
+		"-c", "adapter_khz 8000",
 		"-c", "ftdi_channel 1",
 		"-c", "ftdi_layout_init 0x0008 0x000b",
+		"-c", "ftdi_layout_signal nTRST -data 0x10",
+		"-c", "ftdi_layout_signal nSRST -oe 0x20 -data 0x20",
+		"-c", "adapter_nsrst_delay 500",
 		"-c", fmt::format("ftdi_serial \"{}\"", m_device.serial),
 		"-c", fmt::format("ftdi_vid_pid {:#04x} {:#04x}", m_device.vid, m_device.pid),
 		"-f", fmt::format("{}/{}.tcl", scripts_path, m_board_type),
 	};
+
+	if (m_running)
+		return;
 
 	Glib::spawn_async_with_pipes("/tmp", argv,
 	    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
@@ -57,12 +69,18 @@ JtagServer::start()
 	Glib::signal_child_watch().connect(
 	    sigc::mem_fun(*this, &JtagServer::child_exited),
 	    m_pid);
+
+	m_running = true;
 }
 
 void
 JtagServer::stop()
 {
+	if (!m_running)
+		return;
+
 	kill(m_pid, SIGTERM);
+	m_running = false;
 }
 
 void
@@ -103,4 +121,5 @@ void
 JtagServer::child_exited(Glib::Pid pid, int code)
 {
 	Logger::info("OpenOCD exited with code {} (pid {})", code, pid);
+	m_running = false;
 }

@@ -14,6 +14,7 @@ public:
 	JtagServer(const Device &device, Glib::RefPtr<Gio::InetAddress>,
 	    uint16_t gdb_port, uint16_t ocd_port,
 	    const std::string &board_type);
+	virtual ~JtagServer();
 	void start();
 	void stop();
 	static void bypass(const Device &device);
@@ -32,6 +33,7 @@ protected:
 	Glib::Pid m_pid;
 	Glib::RefPtr<Gio::UnixInputStream> m_out;
 	Glib::RefPtr<Gio::UnixInputStream> m_err;
+	bool m_running;
 };
 
 #endif //DEVCLIENT_JTAG_HH

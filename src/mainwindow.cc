@@ -124,7 +124,6 @@ SerialTab::stop_clicked()
 	if (!m_uart)
 		return;
 
-	m_uart->stop();
 	m_uart.reset();
 	m_status_row.get_widget().set_text("Stopped");
 }
@@ -185,6 +184,7 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
 	m_textbuffer = Gtk::TextBuffer::create();
 	m_textview.set_editable(false);
 	m_textview.set_buffer(m_textbuffer);
+	m_textview.set_wrap_mode(Gtk::WrapMode::WRAP_WORD);
 	m_textview.set_monospace(true);
 	m_scroll.add(m_textview);
 
