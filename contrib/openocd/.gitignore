@@ -9,7 +9,6 @@
 *.a
 *.lo
 *.la
-*.in
 
 # generated source files
 src/jtag/minidriver_imp.h
