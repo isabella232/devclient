@@ -7,6 +7,7 @@
 #include <giomm.h>
 #include <wait.h>
 #include <log.hh>
+#include <utils.hh>
 #include <dtb.hh>
 
 #define BUFFER_SIZE	1024
@@ -35,7 +36,7 @@ void DTB::run_dtc(bool compile, const SlotDone &done)
 
 	std::string errors;
 	std::vector<std::string> argv {
-		"/usr/bin/dtc",
+		executable_dir() / "tools/bin/dtc",
 		"-I", compile ? "dts" : "dtb",
 		"-O", compile ? "dtb" : "dts"
 	};

@@ -29,13 +29,31 @@ add_executable(devclient
         src/mainwindow.cc)
 
 file(COPY contrib/openocd DESTINATION ${CMAKE_BINARY_DIR})
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/openocd.bin)
-add_custom_target(openocd
+file(COPY contrib/dtc DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY scripts DESTINATION ${CMAKE_BINARY_DIR})
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tools)
+
+add_custom_target(openocd ALL
         COMMAND ./bootstrap
-        COMMAND ./configure --enable-target64 --enable-libftdi
+        COMMAND ./configure --enable-target64 --enable-libftdi --prefix=/
         COMMAND make
-        COMMAND make install DESTDIR=${CMAKE_BINARY_DIR}/openocd.bin
+        COMMAND make install DESTDIR=${CMAKE_BINARY_DIR}/tools
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
 
+add_custom_target(dtc ALL
+        COMMAND make
+        COMMAND make install PREFIX=/ DESTDIR=${CMAKE_BINARY_DIR}/tools
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/dtc)
+
 target_link_libraries(devclient ${GIOMM_LIBRARIES} ${GTKMM_LIBRARIES} ${LIBFTDI_LIBRARIES} fmt)
-target_link_libraries(devclient pthread)
+target_link_libraries(devclient pthread stdc++fs)
+
+install(TARGETS devclient DESTINATION bin)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/tools/ DESTINATION tools)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/scripts/ DESTINATION scripts)
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jakub Klama")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/conclusive/devclient")
+
+include(CPack)

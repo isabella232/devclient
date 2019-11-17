@@ -226,9 +226,6 @@ JtagTab::start_clicked()
 {
 	Glib::RefPtr<Gio::InetAddress> addr;
 
-	if (m_server)
-		return;
-
 	addr = Gio::InetAddress::create(m_address_row.get_widget().get_text());
 	m_server = std::make_shared<JtagServer>(m_device, addr,
 	    std::stoi(m_gdb_port_row.get_widget().get_text()),
@@ -242,10 +239,6 @@ JtagTab::start_clicked()
 void
 JtagTab::stop_clicked()
 {
-	if (!m_server)
-		return;
-
-	m_server->stop();
 	m_server.reset();
 }
 

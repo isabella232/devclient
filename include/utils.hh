@@ -8,9 +8,13 @@
 #include <fmt/format.h>
 #include <glibmm.h>
 #include <string>
+#include <iostream>
+#include <fstream>
+#include <experimental/filesystem>
 
 template <>
-struct fmt::formatter<Glib::ustring> {
+struct fmt::formatter<Glib::ustring>
+{
 	template <typename ParseContext>
 	constexpr auto parse(ParseContext &ctx)
 	{
@@ -69,6 +73,12 @@ inline void hex_dump(const void *aData, std::size_t aLength,
 		stream << std::endl;
 		line = line + lineLength;
 	}
+}
+
+inline std::experimental::filesystem::path executable_dir()
+{
+	return (std::experimental::filesystem::read_symlink("/proc/self/exe").
+	    parent_path().parent_path());
 }
 
 #endif //DEVCLIENT_UTILS_HH

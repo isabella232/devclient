@@ -4,11 +4,14 @@
 
 #include <wait.h>
 #include <vector>
+#include <experimental/filesystem>
 #include <giomm.h>
+#include <gtkmm/main.h>
+#include <ftdi.hpp>
 #include <log.hh>
 #include <jtag.hh>
-#include <ftdi.hpp>
-#include <gtkmm/main.h>
+#include <utils.hh>
+
 
 #define BUFFER_SIZE	1024
 
@@ -32,9 +35,9 @@ JtagServer::start()
 {
 	int stdout_fd;
 	int stderr_fd;
-	std::string scripts_path = "/home/jakub/git/devclient/scripts";
+	std::string scripts_path = executable_dir() / "scripts";
 	std::vector<std::string> argv {
-		"/usr/local/bin/openocd",
+		executable_dir() / "tools/bin/openocd",
 		"-c", fmt::format("gdb_port {}", m_gdb_port),
 		"-c", fmt::format("telnet_port {}", m_ocd_port),
 		"-c", "tcl_port disabled",
