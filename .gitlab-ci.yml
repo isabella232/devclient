@@ -9,6 +9,7 @@ devclient:
   script:
     - mkdir build && cd build
     - cmake ..
+    - make all
     - make package
   artifacts:
     paths:
