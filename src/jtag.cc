@@ -2,11 +2,15 @@
 // Created by jakub on 26.10.2019.
 //
 
+#include <wait.h>
 #include <vector>
 #include <giomm.h>
 #include <log.hh>
 #include <jtag.hh>
 #include <ftdi.hpp>
+#include <gtkmm/main.h>
+
+#define BUFFER_SIZE	1024
 
 JtagServer::JtagServer(const Device &device, Glib::RefPtr<Gio::InetAddress>,
     uint16_t gdb_port, uint16_t ocd_port, const std::string &board_type):
@@ -58,18 +62,17 @@ JtagServer::start()
 	m_out = Gio::UnixInputStream::create(stdout_fd, true);
 	m_err = Gio::UnixInputStream::create(stderr_fd, true);
 
-	Glib::signal_io().connect(
-	    sigc::bind(sigc::mem_fun(*this, &JtagServer::output_ready), m_out),
-	    stdout_fd, Glib::IOCondition::IO_IN);
+	m_out->read_bytes_async(BUFFER_SIZE, sigc::bind(sigc::mem_fun(
+	    *this, &JtagServer::output_ready), m_out));
 
-	Glib::signal_io().connect(
-	    sigc::bind(sigc::mem_fun(*this, &JtagServer::output_ready), m_err),
-	    stderr_fd, Glib::IOCondition::IO_IN);
+	m_err->read_bytes_async(BUFFER_SIZE, sigc::bind(sigc::mem_fun(
+	    *this, &JtagServer::output_ready), m_err));
 
 	Glib::signal_child_watch().connect(
 	    sigc::mem_fun(*this, &JtagServer::child_exited),
 	    m_pid);
 
+	setpgid(m_pid, getpid());
 	m_running = true;
 }
 
@@ -80,7 +83,10 @@ JtagServer::stop()
 		return;
 
 	kill(m_pid, SIGTERM);
-	m_running = false;
+
+	/* Crappy, there should be a better way to do this */
+	while (m_running)
+		Gtk::Main::iteration();
 }
 
 void
@@ -104,17 +110,25 @@ JtagServer::bypass(const Device &device)
 	context.close();
 }
 
-bool
-JtagServer::output_ready(Glib::IOCondition cond,
+void
+JtagServer::output_ready(Glib::RefPtr<Gio::AsyncResult> &result,
     Glib::RefPtr<Gio::UnixInputStream> stream)
 {
-	char buffer[4096];
+	Glib::RefPtr<Glib::Bytes> buffer;
+	const char *ptr;
 	size_t nread;
 
-	nread = stream->read(buffer, sizeof(buffer));
-	output_produced.emit(std::string(buffer, nread));
+	buffer = stream->read_bytes_finish(result);
+	if (buffer.get() == nullptr)
+		return;
 
-	return (true);
+	ptr = static_cast<const char *>(buffer->get_data(nread));
+	if (nread == 0)
+		return;
+
+	output_produced.emit(std::string(ptr, nread));
+	stream->read_bytes_async(BUFFER_SIZE, sigc::bind(sigc::mem_fun(
+	    *this, &JtagServer::output_ready), stream));
 }
 
 void

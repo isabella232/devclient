@@ -23,7 +23,7 @@ public:
 
 protected:
 	void child_exited(Glib::Pid pid, int code);
-	bool output_ready(Glib::IOCondition cond,
+	void output_ready(Glib::RefPtr<Gio::AsyncResult> &result,
 	    Glib::RefPtr<Gio::UnixInputStream> stream);
 
 	const Device &m_device;

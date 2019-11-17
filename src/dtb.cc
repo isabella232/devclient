@@ -9,6 +9,8 @@
 #include <log.hh>
 #include <dtb.hh>
 
+#define BUFFER_SIZE	1024
+
 DTB::DTB( std::shared_ptr<std::string> &dts,
     std::shared_ptr<std::vector<uint8_t>> &dtb):
     m_dts(dts),
@@ -47,8 +49,11 @@ void DTB::run_dtc(bool compile, const SlotDone &done)
 	m_out = Gio::UnixInputStream::create(stdout_fd, true);
 	m_err = Gio::UnixInputStream::create(stderr_fd, true);
 
-	m_out->read_bytes_async(1024, sigc::mem_fun(*this, &DTB::output_ready));
-	m_err->read_bytes_async(1024, sigc::mem_fun(*this, &DTB::error_ready));
+	m_out->read_bytes_async(BUFFER_SIZE,
+	    sigc::mem_fun(*this, &DTB::output_ready));
+
+	m_err->read_bytes_async(BUFFER_SIZE,
+	    sigc::mem_fun(*this, &DTB::error_ready));
 
 	Glib::signal_child_watch().connect(
 	    sigc::mem_fun(*this, &DTB::child_exited),
