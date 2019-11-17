@@ -1,0 +1,15 @@
+stages:
+  - build
+
+devclient:
+  stage: build
+  tags:
+    - ubuntu
+
+  script:
+    - mkdir build
+    - cd build && cmake ..
+    - cd build && make package
+  artifacts:
+    paths:
+      - build/*.deb

@@ -21,7 +21,6 @@ DTB::DTB( std::shared_ptr<std::string> &dts,
 
 DTB::~DTB()
 {
-	Logger::debug("DTB destroyed");
 }
 
 void DTB::run_dtc(bool compile, const SlotDone &done)

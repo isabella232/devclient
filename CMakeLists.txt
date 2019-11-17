@@ -49,8 +49,8 @@ target_link_libraries(devclient ${GIOMM_LIBRARIES} ${GTKMM_LIBRARIES} ${LIBFTDI_
 target_link_libraries(devclient pthread stdc++fs)
 
 install(TARGETS devclient DESTINATION bin)
-install(DIRECTORY ${CMAKE_BINARY_DIR}/tools/ DESTINATION tools)
-install(DIRECTORY ${CMAKE_BINARY_DIR}/scripts/ DESTINATION scripts)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/tools/ DESTINATION tools USE_SOURCE_PERMISSIONS)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS)
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jakub Klama")
