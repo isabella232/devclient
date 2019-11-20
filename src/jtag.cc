@@ -40,11 +40,11 @@
 #define BUFFER_SIZE	1024
 
 JtagServer::JtagServer(const Device &device, Glib::RefPtr<Gio::InetAddress>,
-    uint16_t gdb_port, uint16_t ocd_port, const std::string &board_type):
+    uint16_t gdb_port, uint16_t ocd_port, const std::string &board_script):
     m_device(device),
     m_ocd_port(ocd_port),
     m_gdb_port(gdb_port),
-    m_board_type(board_type),
+    m_board_script(board_script),
     m_running(false)
 {
 }
@@ -59,7 +59,6 @@ JtagServer::start()
 {
 	int stdout_fd;
 	int stderr_fd;
-	std::string scripts_path = executable_dir() / "scripts";
 	std::vector<std::string> argv {
 		executable_dir() / "tools/bin/openocd",
 		"-c", fmt::format("gdb_port {}", m_gdb_port),
@@ -75,16 +74,20 @@ JtagServer::start()
 		"-c", "adapter_nsrst_delay 500",
 		"-c", fmt::format("ftdi_serial \"{}\"", m_device.serial),
 		"-c", fmt::format("ftdi_vid_pid {:#04x} {:#04x}", m_device.vid, m_device.pid),
-		"-f", fmt::format("{}/{}.tcl", scripts_path, m_board_type),
+		"-f", m_board_script
 	};
 
 	if (m_running)
 		return;
 
-	Glib::spawn_async_with_pipes("/tmp", argv,
-	    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
-	    Glib::SlotSpawnChildSetup(), &m_pid, nullptr,
-	    &stdout_fd, &stderr_fd);
+	try {
+		Glib::spawn_async_with_pipes("/tmp", argv,
+		    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
+		    Glib::SlotSpawnChildSetup(), &m_pid, nullptr,
+		    &stdout_fd, &stderr_fd);
+	} catch (const Glib::Error &err) {
+		throw std::runtime_error(err.what());
+	}
 
 	m_out = Gio::UnixInputStream::create(stdout_fd, true);
 	m_err = Gio::UnixInputStream::create(stderr_fd, true);

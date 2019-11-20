@@ -37,7 +37,7 @@ class JtagServer
 public:
 	JtagServer(const Device &device, Glib::RefPtr<Gio::InetAddress>,
 	    uint16_t gdb_port, uint16_t ocd_port,
-	    const std::string &board_type);
+	    const std::string &board_script);
 	virtual ~JtagServer();
 	void start();
 	void stop();
@@ -53,7 +53,7 @@ protected:
 	const Device &m_device;
 	uint16_t m_ocd_port;
 	uint16_t m_gdb_port;
-	std::string m_board_type;
+	std::string m_board_script;
 	Glib::Pid m_pid;
 	Glib::RefPtr<Gio::UnixInputStream> m_out;
 	Glib::RefPtr<Gio::UnixInputStream> m_err;

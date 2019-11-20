@@ -31,7 +31,7 @@ add_executable(devclient
         src/deviceselect.cc
         src/mainwindow.cc)
 
-message("Cloning OpenOCD")
+message("-- Cloning OpenOCD")
 
 execute_process(
         COMMAND git clone --recursive ${OPENOCD_URL} -b master
@@ -41,7 +41,7 @@ execute_process(
         COMMAND git pull
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
 
-message("Cloning DTC")
+message("-- Cloning DTC")
 
 execute_process(
         COMMAND git clone --recursive ${DTC_URL} -b master

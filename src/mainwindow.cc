@@ -262,7 +262,14 @@ JtagTab::start_clicked()
 	    m_board_row.get_widget().get_filename());
 
 	m_server->output_produced.connect(sigc::mem_fun(*this, &JtagTab::output_ready));
-	m_server->start();
+
+	try {
+		m_server->start();
+	} catch (const std::runtime_error &err) {
+		Gtk::MessageDialog msg("Failed to start JTAG server");
+		msg.set_secondary_text(err.what());
+		msg.run();
+	}
 }
 
 void
