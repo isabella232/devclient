@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 project(devclient)
 set(CMAKE_CXX_STANDARD 17)
 
+set(OPENOCD_URL https://github.com/conclusiveeng/openocd.git)
+set(DTC_URL git://git.kernel.org/pub/scm/utils/dtc/dtc.git)
+
 add_subdirectory(contrib/fmt-6.0.0)
 
 find_package(PkgConfig)
@@ -28,8 +31,26 @@ add_executable(devclient
         src/deviceselect.cc
         src/mainwindow.cc)
 
-file(COPY contrib/openocd DESTINATION ${CMAKE_BINARY_DIR})
-file(COPY contrib/dtc DESTINATION ${CMAKE_BINARY_DIR})
+message("Cloning OpenOCD")
+
+execute_process(
+        COMMAND git clone --recursive ${OPENOCD_URL} -b master
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+execute_process(
+        COMMAND git pull
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
+
+message("Cloning DTC")
+
+execute_process(
+        COMMAND git clone --recursive ${DTC_URL} -b master
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+execute_process(
+        COMMAND git pull
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/dtc)
+
 file(COPY scripts DESTINATION ${CMAKE_BINARY_DIR})
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tools)
 
