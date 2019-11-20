@@ -193,29 +193,32 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
     m_address_row("Listen address"),
     m_gdb_port_row("GDB server listen port"),
     m_ocd_port_row("OpenOCD listen port"),
-    m_board_row("Board type"),
+    m_board_row("Board init script"),
     m_status_row("Status"),
     m_start("Start"),
     m_stop("Stop"),
+    m_reset("Reset target"),
     m_bypass("J-Link bypass mode"),
     m_parent(parent)
 {
+	Pango::FontDescription font("Monospace 9");
+
 	m_address_row.get_widget().set_text("127.0.0.1");
 	m_ocd_port_row.get_widget().set_text("4444");
 	m_gdb_port_row.get_widget().set_text("3333");
-	m_board_row.get_widget().append("samthedongle-v2");
 
 	m_textbuffer = Gtk::TextBuffer::create();
 	m_textview.set_editable(false);
 	m_textview.set_buffer(m_textbuffer);
 	m_textview.set_wrap_mode(Gtk::WrapMode::WRAP_WORD);
-	m_textview.set_monospace(true);
+	m_textview.override_font(font);
 	m_scroll.add(m_textview);
 
 	m_buttons.set_border_width(5);
 	m_buttons.set_layout(Gtk::ButtonBoxStyle::BUTTONBOX_END);
 	m_buttons.pack_start(m_start);
 	m_buttons.pack_start(m_stop);
+	m_buttons.pack_start(m_reset);
 	m_buttons.pack_start(m_bypass);
 
 	m_start.signal_clicked().connect(sigc::mem_fun(*this,
@@ -254,7 +257,7 @@ JtagTab::start_clicked()
 	m_server = std::make_shared<JtagServer>(m_device, addr,
 	    std::stoi(m_gdb_port_row.get_widget().get_text()),
 	    std::stoi(m_ocd_port_row.get_widget().get_text()),
-	    m_board_row.get_widget().get_active_text());
+	    m_board_row.get_widget().get_filename());
 
 	m_server->output_produced.connect(sigc::mem_fun(*this, &JtagTab::output_ready));
 	m_server->start();
@@ -280,9 +283,11 @@ EepromTab::EepromTab(MainWindow *parent, const Device &dev):
     m_save("Save buffer to file"),
     m_parent(parent)
 {
+	Pango::FontDescription font("Monospace 9");
+
 	m_textbuffer = Gtk::TextBuffer::create();
 	m_textview.set_buffer(m_textbuffer);
-	m_textview.set_monospace(true);
+	m_textview.override_font(font);
 	m_scroll.add(m_textview);
 
 	m_buttons.set_border_width(5);

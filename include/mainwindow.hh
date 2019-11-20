@@ -82,7 +82,7 @@ protected:
 	FormRow<Gtk::Entry> m_address_row;
 	FormRow<Gtk::Entry> m_gdb_port_row;
 	FormRow<Gtk::Entry> m_ocd_port_row;
-	FormRow<Gtk::ComboBoxText> m_board_row;
+	FormRow<Gtk::FileChooserButton> m_board_row;
 	FormRow<Gtk::Entry> m_status_row;
 	Glib::RefPtr<Gtk::TextBuffer> m_textbuffer;
 	Gtk::ScrolledWindow m_scroll;
@@ -90,6 +90,7 @@ protected:
 	Gtk::ButtonBox m_buttons;
 	Gtk::Button m_start;
 	Gtk::Button m_stop;
+	Gtk::Button m_reset;
 	Gtk::Button m_bypass;
 	std::shared_ptr<JtagServer> m_server;
 	MainWindow *m_parent;
