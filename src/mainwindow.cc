@@ -38,7 +38,8 @@
 MainWindow::MainWindow():
     m_uart_tab(this, m_device),
     m_jtag_tab(this, m_device),
-    m_eeprom_tab(this, m_device)
+    m_eeprom_tab(this, m_device),
+    m_gpio_tab(this, m_device)
 {
 	DeviceSelectDialog dialog;
 
@@ -48,6 +49,7 @@ MainWindow::MainWindow():
 	m_notebook.append_page(m_uart_tab, "Serial console");
 	m_notebook.append_page(m_jtag_tab, "JTAG");
 	m_notebook.append_page(m_eeprom_tab, "EEPROM");
+	m_notebook.append_page(m_gpio_tab, "GPIO");
 	add(m_notebook);
 	show_all_children();
 
@@ -272,7 +274,10 @@ JtagTab::stop_clicked()
 void
 JtagTab::bypass_clicked()
 {
+	Gtk::MessageDialog msg("Bypass mode enabled.");
+
 	JtagServer::bypass(m_device);
+	msg.run();
 }
 
 EepromTab::EepromTab(MainWindow *parent, const Device &dev):
@@ -362,7 +367,6 @@ EepromTab::compile_done(bool ok, int size, const std::string &errors)
 void
 EepromTab::decompile_done(bool ok, int size, const std::string &errors)
 {
-
 	if (ok) {
 		Gtk::MessageDialog dlg(*m_parent, fmt::format(
 		    "Reading done (size: {} bytes)", size));
@@ -378,3 +382,23 @@ EepromTab::decompile_done(bool ok, int size, const std::string &errors)
 	}
 }
 
+
+GpioTab::GpioTab(MainWindow *parent, const Device &dev):
+    Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
+    m_gpio0_row("GPIO 0"),
+    m_gpio1_row("GPIO 1"),
+    m_gpio2_row("GPIO 2"),
+    m_gpio3_row("GPIO 3"),
+    m_device(dev)
+{
+	set_border_width(10);
+	m_gpio0_row.get_widget().set_label("off");
+	m_gpio1_row.get_widget().set_label("off");
+	m_gpio2_row.get_widget().set_label("off");
+	m_gpio3_row.get_widget().set_label("off");
+
+	pack_start(m_gpio0_row, false, true);
+	pack_start(m_gpio1_row, false, true);
+	pack_start(m_gpio2_row, false, true);
+	pack_start(m_gpio3_row, false, true);
+}

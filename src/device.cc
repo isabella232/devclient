@@ -62,5 +62,5 @@ DeviceEnumerator::find_by_serial(const std::string &serial)
 			return (i);
 	}
 
-	return std::nullopt;
+	return (std::nullopt);
 }

@@ -33,8 +33,8 @@
 #include <log.hh>
 #include <eeprom.hh>
 
-#define EEPROM_24C256_ADDRESS_RD	0xa1
-#define EEPROM_24C256_ADDRESS_WR	0xa0
+#define EEPROM_24C_ADDRESS_RD	0xa1
+#define EEPROM_24C_ADDRESS_WR	0xa0
 
 class Eeprom24c: public Eeprom
 {
@@ -45,13 +45,13 @@ public:
 	{
 		m_i2c.start();
 		m_i2c.write({
-		    EEPROM_24C256_ADDRESS_WR,
+		    EEPROM_24C_ADDRESS_WR,
 		    static_cast<unsigned char>((offset >> 8) & 0xff),
 		    static_cast<unsigned char>(offset & 0xff)
 		});
 
 		m_i2c.start();
-		m_i2c.write({ EEPROM_24C256_ADDRESS_RD });
+		m_i2c.write({ EEPROM_24C_ADDRESS_RD });
 		m_i2c.read(length, data);
 		m_i2c.stop();
 	}
@@ -65,7 +65,7 @@ public:
 			Logger::debug("Writing to AT24C at offset {}", offset);
 			m_i2c.start();
 			m_i2c.write({
-			    EEPROM_24C256_ADDRESS_WR,
+			    EEPROM_24C_ADDRESS_WR,
 			    static_cast<unsigned char>((offset >> 8) & 0xff),
 			    static_cast<unsigned char>(offset & 0xff)
 			});
@@ -84,4 +84,4 @@ public:
 	}
 };
 
-#endif //DEVCLIENT_24C_HH
+#endif /* DEVCLIENT_24C_HH */

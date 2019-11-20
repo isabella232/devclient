@@ -1,4 +1,4 @@
-## Conclusive Developer Cable Client
+# Conclusive Developer Cable Client
 
 ## Building and running on Debian and Ubuntu
 
@@ -25,3 +25,15 @@ $ make package
 sudo dpkg -i devclient-0.1.1-Linux.deb
 sudo /opt/conclusive/devclient/bin/devclient
 ```
+
+## Building and running on macOS
+
+## Usage
+
+### Device selection
+
+### Serial console tab
+
+### JTAG tab
+
+### EEPROM tab

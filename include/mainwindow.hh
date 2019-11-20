@@ -122,6 +122,21 @@ protected:
 	const Device &m_device;
 };
 
+class GpioTab: public Gtk::Box
+{
+public:
+	GpioTab(MainWindow *parent, const Device &dev);
+
+protected:
+	FormRow<Gtk::Button> m_gpio0_row;
+	FormRow<Gtk::Button> m_gpio1_row;
+	FormRow<Gtk::Button> m_gpio2_row;
+	FormRow<Gtk::Button> m_gpio3_row;
+	MainWindow *m_parent;
+	const Device &m_device;
+
+};
+
 class MainWindow: public Gtk::Window
 {
 public:
@@ -136,7 +151,8 @@ protected:
 	SerialTab m_uart_tab;
 	JtagTab m_jtag_tab;
 	EepromTab m_eeprom_tab;
+	GpioTab m_gpio_tab;
 	Device m_device;
 };
 
-#endif //DEVCLIENT_MAINWINDOW_HH
+#endif /* DEVCLIENT_MAINWINDOW_HH */

@@ -26,7 +26,6 @@
  *
  */
 
-#include <string>
 #include <fmt/format.h>
 #include <log.hh>
 

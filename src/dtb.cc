@@ -122,7 +122,8 @@ DTB::output_ready(Glib::RefPtr<Gio::AsyncResult> &result)
 	else
 		m_dts->insert(m_dts->end(), &buffer[0], &buffer[len]);
 
-	m_out->read_bytes_async(1024, sigc::mem_fun(*this, &DTB::output_ready));
+	m_out->read_bytes_async(BUFFER_SIZE,
+	    sigc::mem_fun(*this, &DTB::output_ready));
 }
 
 void
@@ -139,7 +140,8 @@ DTB::error_ready(Glib::RefPtr<Gio::AsyncResult> &result)
 		return;
 
 	m_errors.insert(m_errors.end(), &buffer[0], &buffer[len]);
-	m_err->read_bytes_async(1024, sigc::mem_fun(*this, &DTB::error_ready));
+	m_err->read_bytes_async(BUFFER_SIZE,
+	    sigc::mem_fun(*this, &DTB::error_ready));
 }
 
 void
