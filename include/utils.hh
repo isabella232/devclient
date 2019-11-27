@@ -126,7 +126,7 @@ inline std::string executable_dir()
 	exe_path_ccstr.erase(exe_path_ccstr.rfind("/"));
 	exe_path_ccstr.erase(exe_path_ccstr.rfind("/"));
 	return exe_path_ccstr;
-#elseif defined(__unix__)
+#elif defined(__unix__)
 	return filesystem::read_symlink("/proc/self/exe")
 		.parent_path()
 		.parent_path()
