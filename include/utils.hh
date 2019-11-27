@@ -101,8 +101,10 @@ inline void hex_dump(const void *aData, std::size_t aLength,
 
 inline std::experimental::filesystem::path executable_dir()
 {
-	return (std::experimental::filesystem::read_symlink("/proc/self/exe").
-	    parent_path().parent_path());
+	return std::experimental::filesystem::
+		read_symlink("/proc/self/exe")
+		.parent_path()
+		.parent_path();
 }
 
 #endif //DEVCLIENT_UTILS_HH
