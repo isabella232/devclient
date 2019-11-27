@@ -38,10 +38,10 @@
 #if defined(__cplusplus) && __cplusplus >= 201703L && defined(__has_include) && __has_include(<filesystem>)
 #define GHC_USE_STD_FS
 #include <filesystem>
-namespace fs = std::filesystem;
+namespace filesystem = std::filesystem;
 #else
 #include <ghc/filesystem.hpp>
-namespace fs = ghc::filesystem;
+namespace filesystem = ghc::filesystem;
 #endif
 
 template <>
@@ -107,9 +107,9 @@ inline void hex_dump(const void *aData, std::size_t aLength,
 	}
 }
 
-inline fs::path executable_dir()
+inline filesystem::path executable_dir()
 {
-	return fs::read_symlink("/proc/self/exe").parent_path().parent_path();
+	return filesystem::read_symlink("/proc/self/exe").parent_path().parent_path();
 }
 
 #endif //DEVCLIENT_UTILS_HH

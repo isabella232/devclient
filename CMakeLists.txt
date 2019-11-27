@@ -64,7 +64,7 @@ add_custom_target(openocd ALL
 
 add_custom_target(dtc ALL
         COMMAND make
-        COMMAND make install PREFIX=/usr DESTDIR=${CMAKE_BINARY_DIR}/tools
+        COMMAND make install PREFIX=/usr/local DESTDIR=${CMAKE_BINARY_DIR}/tools
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/dtc)
 
 target_link_libraries(devclient ${GIOMM_LIBRARIES} ${GTKMM_LIBRARIES} ${LIBFTDI_LIBRARIES} fmt)
