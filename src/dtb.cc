@@ -29,7 +29,6 @@
 #include <vector>
 #include <string>
 #include <giomm.h>
-#include <wait.h>
 #include <log.hh>
 #include <utils.hh>
 #include <dtb.hh>

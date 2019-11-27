@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(OPENOCD_URL https://github.com/conclusiveeng/openocd.git)
 set(DTC_URL git://git.kernel.org/pub/scm/utils/dtc/dtc.git)
 
-set(GHCFS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/filesystem-1.2.10/include)
-
 add_subdirectory(contrib/fmt-6.0.0)
 add_subdirectory(contrib/filesystem-1.2.10)
 
@@ -20,7 +18,7 @@ link_directories(${GTKMM_LIBRARY_DIRS})
 include_directories(${GIOMM_INCLUDE_DIRS})
 include_directories(${GTKMM_INCLUDE_DIRS})
 include_directories(${LIBFTDI_INCLUDE_DIRS})
-include_directories(${GHCFS_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/contrib/filesystem-1.2.10/include)
 include_directories(include)
 
 add_executable(devclient
@@ -71,7 +69,11 @@ add_custom_target(dtc ALL
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/dtc)
 
 target_link_libraries(devclient ${GIOMM_LIBRARIES} ${GTKMM_LIBRARIES} ${LIBFTDI_LIBRARIES} fmt)
-target_link_libraries(devclient pthread stdc++fs)
+target_link_libraries(devclient pthread)
+
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_link_libraries(devclient stdc++fs)
+endif()
 
 install(TARGETS devclient DESTINATION bin)
 install(DIRECTORY ${CMAKE_BINARY_DIR}/tools/ DESTINATION tools USE_SOURCE_PERMISSIONS)
