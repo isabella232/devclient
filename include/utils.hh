@@ -36,6 +36,10 @@
 #include <fstream>
 #include <filesystem.hh>
 
+#if defined(__APPLE__) && defined(__MACH__) // Running macOS
+#include <mach-o/dyld.h>
+#endif
+
 template <>
 struct fmt::formatter<Glib::ustring>
 {
@@ -99,9 +103,44 @@ inline void hex_dump(const void *aData, std::size_t aLength,
 	}
 }
 
+inline std::string executable_path()
+{
+#if defined(__APPLE__) && defined(__MACH__)
+	char exe_path[1024];
+	uint32_t len = sizeof(exe_path);
+	
+	if (_NSGetExecutablePath(exe_path, &len) != 0) {
+		exe_path[0] = '\0';
+		throw std::runtime_error(
+			"Predefined executable path buffer size too small.");
+	} else {
+		// Resolve symlinks / . / .. if possible
+		char *canonical_path = realpath(exe_path, NULL);
+		if (canonical_path != NULL) {
+			std::strncpy(exe_path, canonical_path, len);
+			free(canonical_path);
+			return std::string(exe_path);
+		}
+	}
+#else
+	return filesystem::read_symlink("/proc/self/exe")
+		.parent_path()
+		.parent_path()
+		.native();
+#endif
+}
+
+
 inline filesystem::path executable_dir()
 {
-	return filesystem::read_symlink("/proc/self/exe").parent_path().parent_path();
+#if defined(__APPLE__) && defined(__MACH__)
+	throw std::runtime_error("executable_dir() is valid only for Linux.");
+#else
+	return filesystem::read_symlink("/proc/self/exe")
+		.parent_path()
+		.parent_path()
+		.native();
+#endif
 }
 
 #endif //DEVCLIENT_UTILS_HH
