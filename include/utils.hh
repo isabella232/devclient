@@ -36,7 +36,7 @@
 #include <fstream>
 #include <filesystem.hh>
 
-#if defined(__APPLE__) && defined(__MACH__) // Running macOS
+#if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
 #endif
 
@@ -103,39 +103,37 @@ inline void hex_dump(const void *aData, std::size_t aLength,
 	}
 }
 
-inline std::string executable_rootdir()
+inline std::string executable_dir()
 {
 #if defined(__APPLE__) && defined(__MACH__)
 	uint32_t sz = 256;
 	char *exe_path = static_cast<char *>(malloc(sz * sizeof(char)));
-	
-	// Retrieve executable path.
+
 	while (_NSGetExecutablePath(exe_path, &sz) != 0)
 	{
-		// If the path is longer than our buffer, expand buffer and try
-		// again.
 		sz *= 2;
 		exe_path = static_cast<char *>(
 			realloc(exe_path, sz * sizeof(char)));
 	}
 	
-	// Get canonical path, i.e. reduce ., .. and such.
 	char *canon_path = realpath(exe_path, nullptr);
 	if (canon_path != nullptr) {
 		std::strncpy(exe_path, canon_path, sz);
 		free(canon_path);
 	}
-	
-	// Remove two top directories from the path and return.
+
 	std::string exe_path_ccstr(exe_path);
 	exe_path_ccstr.erase(exe_path_ccstr.rfind("/"));
 	exe_path_ccstr.erase(exe_path_ccstr.rfind("/"));
 	return exe_path_ccstr;
-#else
+#elseif defined(__unix__)
 	return filesystem::read_symlink("/proc/self/exe")
 		.parent_path()
 		.parent_path()
 		.native();
+#else
+	throw std::runtime_error(
+		"Unimplemented executable_dir() for current platform.");
 #endif
 }
 

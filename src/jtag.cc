@@ -58,7 +58,7 @@ JtagServer::start()
 	int stdout_fd;
 	int stderr_fd;
 	std::vector<std::string> argv {
-		executable_rootdir() + "/tools/bin/openocd",
+		executable_dir() + "/tools/bin/openocd",
 		"-c", fmt::format("gdb_port {}", m_gdb_port),
 		"-c", fmt::format("telnet_port {}", m_ocd_port),
 		"-c", "tcl_port disabled",
