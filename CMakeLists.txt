@@ -6,6 +6,7 @@ set(OPENOCD_URL https://github.com/conclusiveeng/openocd.git)
 set(DTC_URL git://git.kernel.org/pub/scm/utils/dtc/dtc.git)
 
 add_subdirectory(contrib/fmt-6.0.0)
+add_subdirectory(contrib/filesystem-1.2.10)
 
 find_package(PkgConfig)
 

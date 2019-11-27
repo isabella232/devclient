@@ -34,7 +34,15 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <experimental/filesystem>
+
+#if defined(__cplusplus) && __cplusplus >= 201703L && defined(__has_include) && __has_include(<filesystem>)
+#define GHC_USE_STD_FS
+#include <filesystem>
+namespace fs = std::filesystem;
+#else
+#include <ghc/filesystem.hpp>
+namespace fs = ghc::filesystem;
+#endif
 
 template <>
 struct fmt::formatter<Glib::ustring>
@@ -99,12 +107,9 @@ inline void hex_dump(const void *aData, std::size_t aLength,
 	}
 }
 
-inline std::experimental::filesystem::path executable_dir()
+inline fs::path executable_dir()
 {
-	return std::experimental::filesystem::
-		read_symlink("/proc/self/exe")
-		.parent_path()
-		.parent_path();
+	return fs::read_symlink("/proc/self/exe").parent_path().parent_path();
 }
 
 #endif //DEVCLIENT_UTILS_HH
