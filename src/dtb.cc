@@ -58,7 +58,7 @@ void DTB::run_dtc(bool compile, const SlotDone &done)
 
 	std::string errors;
 	std::vector<std::string> argv {
-		executable_dir() / "tools/bin/dtc",
+		executable_rootdir() + "/tools/bin/dtc",
 		"-I", compile ? "dts" : "dtb",
 		"-O", compile ? "dtb" : "dts"
 	};

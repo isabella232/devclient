@@ -103,38 +103,34 @@ inline void hex_dump(const void *aData, std::size_t aLength,
 	}
 }
 
-inline std::string executable_path()
+inline std::string executable_rootdir()
 {
 #if defined(__APPLE__) && defined(__MACH__)
-	char exe_path[1024];
-	uint32_t len = sizeof(exe_path);
+	uint32_t sz = 256;
+	char *exe_path = static_cast<char *>(malloc(sz * sizeof(char)));
 	
-	if (_NSGetExecutablePath(exe_path, &len) != 0) {
-		exe_path[0] = '\0';
-		throw std::runtime_error(
-			"Predefined executable path buffer size too small.");
-	} else {
-		// Resolve symlinks / . / .. if possible
-		char *canonical_path = realpath(exe_path, NULL);
-		if (canonical_path != NULL) {
-			std::strncpy(exe_path, canonical_path, len);
-			free(canonical_path);
-			return std::string(exe_path);
-		}
+	// Retrieve executable path.
+	while (_NSGetExecutablePath(exe_path, &sz) != 0)
+	{
+		// If the path is longer than our buffer, expand buffer and try
+		// again.
+		sz *= 2;
+		exe_path = static_cast<char *>(
+			realloc(exe_path, sz * sizeof(char)));
 	}
-#else
-	return filesystem::read_symlink("/proc/self/exe")
-		.parent_path()
-		.parent_path()
-		.native();
-#endif
-}
-
-
-inline filesystem::path executable_dir()
-{
-#if defined(__APPLE__) && defined(__MACH__)
-	throw std::runtime_error("executable_dir() is valid only for Linux.");
+	
+	// Get canonical path, i.e. reduce ., .. and such.
+	char *canon_path = realpath(exe_path, nullptr);
+	if (canon_path != nullptr) {
+		std::strncpy(exe_path, canon_path, sz);
+		free(canon_path);
+	}
+	
+	// Remove two top directories from the path and return.
+	std::string exe_path_ccstr(exe_path);
+	exe_path_ccstr.erase(exe_path_ccstr.rfind("/"));
+	exe_path_ccstr.erase(exe_path_ccstr.rfind("/"));
+	return exe_path_ccstr;
 #else
 	return filesystem::read_symlink("/proc/self/exe")
 		.parent_path()
