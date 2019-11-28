@@ -131,7 +131,6 @@ inline std::string executable_dir()
 #elif defined(__unix__)
 	return filesystem::read_symlink("/proc/self/exe")
 		.parent_path()
-		.parent_path()
 		.native();
 #else
 	throw std::runtime_error(
