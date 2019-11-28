@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(OPENOCD_URL https://github.com/conclusiveeng/openocd.git)
 set(DTC_URL git://git.kernel.org/pub/scm/utils/dtc/dtc.git)
 
+set(OPENOCD_VER v0.10.0)
+set(DTC_VER v1.5.1)
+
 add_subdirectory(contrib/fmt-6.0.0)
 add_subdirectory(contrib/filesystem-1.2.10)
 
@@ -36,7 +39,7 @@ add_executable(devclient
 message("-- Cloning OpenOCD")
 
 execute_process(
-        COMMAND git clone --recursive ${OPENOCD_URL} -b master
+        COMMAND git clone --recursive ${OPENOCD_URL} -b ${OPENOCD_VER}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 execute_process(
@@ -46,7 +49,7 @@ execute_process(
 message("-- Cloning DTC")
 
 execute_process(
-        COMMAND git clone --recursive ${DTC_URL} -b master
+        COMMAND git clone --recursive ${DTC_URL} -b ${DTC_VER}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 execute_process(
