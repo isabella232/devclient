@@ -28,13 +28,11 @@ sudo /opt/conclusive/devclient/bin/devclient
 
 ## Building and running on macOS
 
-1. You'll need `homebrew` to get all of the required dependencies. Run:
+1. You'll need `homebrew` to get all of the required dependencies. Run: `brew install cmake libtool automake libusb libusb-compat hidapi libftdi gtkmm3`
 
-```
-brew install cmake libtool automake libusb libusb-compat hidapi libftdi gtkmm3
-```
+2. Build as for Linux.
 
-
+3. If you encounter an error like this: `Failed to open device: unable to claim usb device. Make sure the default FTDI driver is not in use`, run `sudo kextunload -b com.FTDI.driver.FTDIUSBSerialDriver`
 
 ## Usage
 
