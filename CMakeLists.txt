@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(OPENOCD_URL https://github.com/conclusiveeng/openocd.git)
 set(DTC_URL git://git.kernel.org/pub/scm/utils/dtc/dtc.git)
 
-set(OPENOCD_VER v0.10.0)
+set(OPENOCD_VER samthedongle)
 set(DTC_VER v1.5.1)
 
 add_subdirectory(contrib/fmt-6.0.0)
