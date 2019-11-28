@@ -64,9 +64,7 @@ MainWindow::MainWindow():
 }
 
 MainWindow::~MainWindow()
-{
-
-}
+{}
 
 SerialTab::SerialTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
@@ -179,8 +177,7 @@ SerialTab::launch_terminal_clicked()
 
 #if !defined(__APPLE__) && !defined(__unix__)
 	Gtk::MessageDialog dialog(
-		*this, "Error", false, Gtk::MESSAGE_WARNING,
-		Gtk::BUTTONS_OK_CANCEL);
+		*this, "Error", false, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_OK);
 	dialog.set_secondary_text(
 		"Launching a terminal is unimplemented for your platform.");
 	dialog.run();
