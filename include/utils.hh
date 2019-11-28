@@ -34,7 +34,11 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <experimental/filesystem>
+#include <filesystem.hh>
+
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach-o/dyld.h>
+#endif
 
 template <>
 struct fmt::formatter<Glib::ustring>
@@ -99,10 +103,40 @@ inline void hex_dump(const void *aData, std::size_t aLength,
 	}
 }
 
-inline std::experimental::filesystem::path executable_dir()
+inline std::string executable_dir()
 {
-	return (std::experimental::filesystem::read_symlink("/proc/self/exe").
-	    parent_path().parent_path());
+#if defined(__APPLE__) && defined(__MACH__)
+	uint32_t sz = 256;
+	char *exe_path = static_cast<char*>(malloc(sz * sizeof(char)));
+
+	while (_NSGetExecutablePath(exe_path, &sz) != 0)
+	{
+		sz *= 2;
+		exe_path = static_cast<char*>(
+			realloc(exe_path, sz * sizeof(char)));
+	}
+	
+	char *canon_path = realpath(exe_path, nullptr);
+	if (canon_path != nullptr) {
+		std::strncpy(exe_path, canon_path, sz);
+		free(canon_path);
+	}
+
+	std::string exe_path_ccstr(exe_path);
+	exe_path_ccstr.erase(exe_path_ccstr.rfind("/"));
+	
+	free(exe_path);
+	
+	return exe_path_ccstr;
+#elif defined(__unix__)
+	return filesystem::read_symlink("/proc/self/exe")
+		.parent_path()
+		.parent_path()
+		.native();
+#else
+	throw std::runtime_error(
+		"Unimplemented executable_dir() for current platform.");
+#endif
 }
 
 #endif //DEVCLIENT_UTILS_HH

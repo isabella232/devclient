@@ -27,6 +27,7 @@
  */
 
 #include <string>
+#include <gtkmm/dialog.h>
 #include <fmt/format.h>
 #include <formrow.hh>
 #include <utils.hh>
@@ -63,9 +64,7 @@ MainWindow::MainWindow():
 }
 
 MainWindow::~MainWindow()
-{
-
-}
+{}
 
 SerialTab::SerialTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
@@ -157,13 +156,34 @@ SerialTab::stop_clicked()
 void
 SerialTab::launch_terminal_clicked()
 {
+#if defined(__APPLE__) && defined(__MACH__)
+	std::vector<std::string> argv {
+		"osascript",
+		"-e",
+		fmt::format(
+			"tell app \"Terminal\" to do script "
+   			"\"telnet 127.0.0.1 {}\"",
+   			m_port_row.get_widget().get_text())
+	};
+#elif defined(__unix__)
 	std::vector<std::string> argv {
 		"x-terminal-emulator",
 		"-e",
-		fmt::format("telnet 127.0.0.1 {}", m_port_row.get_widget().get_text())
+		fmt::format(
+			"telnet 127.0.0.1 {}",
+			m_port_row.get_widget().get_text())
 	};
+#endif
 
+#if !defined(__APPLE__) && !defined(__unix__)
+	Gtk::MessageDialog dialog(
+		*this, "Error", false, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_OK);
+	dialog.set_secondary_text(
+		"Launching a terminal is unimplemented for your platform.");
+	dialog.run();
+#else
 	Glib::spawn_async("/", argv, Glib::SpawnFlags::SPAWN_SEARCH_PATH);
+#endif
 }
 
 void
