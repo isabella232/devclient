@@ -167,7 +167,6 @@ SerialTab::launch_terminal_clicked()
    			"\"telnet 127.0.0.1 {}\"",
    			m_port_row.get_widget().get_text())
 	};
-	Glib::spawn_async("/", argv, Glib::SpawnFlags::SPAWN_SEARCH_PATH);
 #elif defined(__unix__)
 	std::vector<std::string> argv {
 		"x-terminal-emulator",
@@ -176,7 +175,7 @@ SerialTab::launch_terminal_clicked()
 			"telnet 127.0.0.1 {}",
 			m_port_row.get_widget().get_text())
 	};
-#end
+#endif
 
 #if !defined(__APPLE__) && !defined(__unix__)
 	Gtk::MessageDialog dialog(
