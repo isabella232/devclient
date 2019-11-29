@@ -24,7 +24,7 @@ include_directories(${LIBFTDI_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/contrib/filesystem-1.2.10/include)
 include_directories(include)
 
-add_executable(devclient
+set(SOURCES
         src/main.cc
         src/uart.cc
         src/jtag.cc
@@ -35,6 +35,12 @@ add_executable(devclient
         src/dtb.cc
         src/deviceselect.cc
         src/mainwindow.cc)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    add_executable(devclient MACOSX_BUNDLE ${SOURCES})
+else()
+    add_executable(devclient ${SOURCES})
+endif()
 
 message("-- Cloning OpenOCD")
 
@@ -78,9 +84,19 @@ if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_link_libraries(devclient stdc++fs)
 endif()
 
-install(TARGETS devclient RUNTIME DESTINATION bin)
-install(DIRECTORY ${CMAKE_BINARY_DIR}/tools/ DESTINATION tools USE_SOURCE_PERMISSIONS)
-install(DIRECTORY ${CMAKE_BINARY_DIR}/scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS)
+install(TARGETS devclient
+        BUNDLE DESTINATION .
+        COMPONENT Runtime
+        RUNTIME DESTINATION bin
+        COMPONENT Runtime)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/tools/
+        DESTINATION tools
+        USE_SOURCE_PERMISSIONS
+        COMPONENT Runtime)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/scripts/
+        DESTINATION scripts
+        USE_SOURCE_PERMISSIONS
+        COMPONENT Runtime)
 
 set(CPACK_PACKAGE_VENDOR "Conclusive Engineering")
 set(CPACK_PACKAGE_VERSION_MAJOR 0)
@@ -89,10 +105,16 @@ set(CPACK_PACKAGE_VERSION_PATCH 0)
 set(CPACK_PACKAGE_CHECKSUM SHA256)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(CPACK_GENERATOR Bundle)
+    set(CPACK_GENERATOR DragNDrop)
     set(CPACK_BUNDLE_NAME Devclient)
     set(CPACK_BUNDLE_PLIST ${CMAKE_BINARY_DIR}/../package/macos/Info.plist)
     set(CPACK_BUNDLE_ICON ${CMAKE_BINARY_DIR}/../package/macos/icon.png)
+
+    set(MACOS_APP "${CMAKE_INSTALL_PREFIX}/${APP_NAME}.app")
+    set(MACOS_DEP_DIRS ${CMAKE_BINARY_DIR})
+    install(CODE
+        "include(BundleUtilities)
+        fixup_bundle(\"${MACOS_APP}\" \"\" \"\")" COMPONENT Runtime)
 elseif(UNIX)
     set(CPACK_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jakub Klama")
