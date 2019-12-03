@@ -83,9 +83,9 @@ install(DIRECTORY ${CMAKE_BINARY_DIR}/tools/ DESTINATION tools USE_SOURCE_PERMIS
 install(DIRECTORY ${CMAKE_BINARY_DIR}/scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(CPACK_GENERATOR "productbuild")
+    set(CPACK_GENERATOR DragNDrop)
 elseif(UNIX)
-    set(CPACK_GENERATOR "DEB")
+    set(CPACK_GENERATOR DEB)
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jakub Klama")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/conclusive/devclient")
 endif()
