@@ -61,7 +61,7 @@ file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tools)
 
 add_custom_target(openocd ALL
         COMMAND ./bootstrap nosubmodule
-        COMMAND ./configure --enable-target64 --enable-libftdi --prefix=/
+        COMMAND ./configure --enable-target64 --enable-libftdi --prefix=""
         COMMAND make
         COMMAND make install DESTDIR=${CMAKE_BINARY_DIR}/tools
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
