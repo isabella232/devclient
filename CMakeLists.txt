@@ -68,7 +68,7 @@ add_custom_target(openocd ALL
 
 add_custom_target(dtc ALL
         COMMAND make
-        COMMAND make install PREFIX=/usr/local DESTDIR=${CMAKE_BINARY_DIR}/tools
+        COMMAND make install PREFIX=/usr/local DESTDIR=${CMAKE_BINARY_DIR}/tools NO_PYTHON=1
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/dtc)
 
 target_link_libraries(devclient ${GIOMM_LIBRARIES} ${GTKMM_LIBRARIES} ${LIBFTDI_LIBRARIES} fmt)
@@ -83,9 +83,9 @@ install(DIRECTORY ${CMAKE_BINARY_DIR}/tools/ DESTINATION tools USE_SOURCE_PERMIS
 install(DIRECTORY ${CMAKE_BINARY_DIR}/scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(CPACK_GENERATOR DragNDrop)
+    set(CPACK_GENERATOR "DragNDrop")
 elseif(UNIX)
-    set(CPACK_GENERATOR DEB)
+    set(CPACK_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jakub Klama")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/conclusive/devclient")
 endif()
