@@ -28,10 +28,11 @@
 
 #include <iostream>
 #include <memory>
+#include <string>
 #include <sysexits.h>
 #include <getopt.h>
 #include <fmt/format.h>
-#include <string>
+#include <gtkmm/application.h>
 
 #include <log.hh>
 #include <device.hh>
@@ -41,7 +42,7 @@
 #include <gpio.hh>
 #include <utils.hh>
 #include <mainwindow.hh>
-#include <gtkmm/application.h>
+#include <application.hh>
 
 static const struct option long_options[] = {
     { "list", no_argument, nullptr, 'l' },
@@ -145,10 +146,6 @@ main(int argc, char *const argv[])
 		dev = *DeviceEnumerator::find_by_serial(serial);
 		uart = std::unique_ptr<Uart>(new Uart(dev, saddr, 115200));
 	}
-
-	app = Gtk::Application::create("pl.conclusive.devclient");
-
-	MainWindow window;
-	app->run(window);
-	return 0;
+	
+	return Devclient::Application::instance().run();
 }

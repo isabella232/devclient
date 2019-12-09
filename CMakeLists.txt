@@ -34,7 +34,7 @@ add_executable(devclient
         src/log.cc
         src/dtb.cc
         src/deviceselect.cc
-        src/mainwindow.cc)
+        src/mainwindow.cc src/application.cc)
 
 message("-- Cloning OpenOCD")
 

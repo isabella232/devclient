@@ -35,6 +35,7 @@
 #include <deviceselect.hh>
 #include <eeprom/24c.hh>
 #include <mainwindow.hh>
+#include <application.hh>
 
 MainWindow::MainWindow():
     m_uart_tab(this, m_device),
@@ -53,18 +54,24 @@ MainWindow::MainWindow():
 	m_notebook.append_page(m_gpio_tab, "GPIO");
 	add(m_notebook);
 	show_all_children();
-
-	if (dialog.run() == Gtk::ResponseType::RESPONSE_CANCEL)
-		throw std::runtime_error("No device selected");
-
+	
+	dialog.signal_response().connect(
+		sigc::mem_fun(*this, &MainWindow::on_close_deviceselect));
+	
+	dialog.run();
+	
 	m_device = dialog.get_selected_device().value();
 	m_i2c = new I2C(m_device, 100000);
 	m_gpio = new Gpio(m_device);
 	m_gpio->set(0);
 }
 
-MainWindow::~MainWindow()
-{}
+MainWindow::~MainWindow() {}
+
+void MainWindow::on_close_deviceselect(int sig_id)
+{
+	Devclient::Application::instance().close();
+}
 
 SerialTab::SerialTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
@@ -80,7 +87,6 @@ SerialTab::SerialTab(MainWindow *parent, const Device &dev):
     m_label("Connected clients:"),
     m_parent(parent)
 {
-
 	m_address_row.get_widget().set_text("127.0.0.1");
 	m_port_row.get_widget().set_text("2222");
 	m_status_row.get_widget().set_text("Stopped");

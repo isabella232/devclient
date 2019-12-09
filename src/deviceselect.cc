@@ -30,12 +30,14 @@
 #include <gtkmm.h>
 #include <device.hh>
 #include <deviceselect.hh>
+#include <application.hh>
 
 DeviceSelectDialog::DeviceSelectDialog():
     Gtk::Dialog("Select device", true),
-    m_ok(Gtk::Stock::OK),
-    m_cancel(Gtk::Stock::CANCEL)
+    m_ok(Gtk::Stock::OK)
 {
+	set_position(Gtk::WIN_POS_CENTER);
+	
 	m_store = Gtk::ListStore::create(m_columns);
 	m_treeview.set_model(m_store);
 	m_treeview.append_column("VID", m_columns.m_vid);
@@ -54,12 +56,9 @@ DeviceSelectDialog::DeviceSelectDialog():
 
 	m_ok.signal_clicked().connect(sigc::mem_fun(*this,
 	    &DeviceSelectDialog::ok_clicked));
-	m_cancel.signal_clicked().connect(sigc::mem_fun(*this,
-	    &DeviceSelectDialog::cancel_clicked));
-
+	
 	get_content_area()->add(m_treeview);
 	get_action_area()->add(m_ok);
-	get_action_area()->add(m_cancel);
 	set_size_request(400, 300);
 	show_all_children();
 }
@@ -85,12 +84,6 @@ void
 DeviceSelectDialog::ok_clicked()
 {
 	response(Gtk::ResponseType::RESPONSE_OK);
-}
-
-void
-DeviceSelectDialog::cancel_clicked()
-{
-	response(Gtk::ResponseType::RESPONSE_CANCEL);
 }
 
 DeviceSelectDialog::ModelColumns::ModelColumns()

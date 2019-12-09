@@ -53,12 +53,10 @@ protected:
 	};
 
 	void ok_clicked();
-	void cancel_clicked();
 
 	Glib::RefPtr<Gtk::ListStore> m_store;
 	Gtk::TreeView m_treeview;
 	Gtk::Button m_ok;
-	Gtk::Button m_cancel;
 	ModelColumns m_columns;
 };
 

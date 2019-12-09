@@ -153,6 +153,8 @@ protected:
 	EepromTab m_eeprom_tab;
 	GpioTab m_gpio_tab;
 	Device m_device;
+	
+	void on_close_deviceselect(int sig_id);
 };
 
 #endif /* DEVCLIENT_MAINWINDOW_HH */
