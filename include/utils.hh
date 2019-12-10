@@ -29,16 +29,12 @@
 #ifndef DEVCLIENT_UTILS_HH
 #define DEVCLIENT_UTILS_HH
 
-#include <fmt/format.h>
-#include <glibmm.h>
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <filesystem.hh>
-
-#if defined(__APPLE__) && defined(__MACH__)
-#include <mach-o/dyld.h>
-#endif
+#include <glibmm.h>
+#include <gtkmm.h>
+#include <fmt/format.h>
 
 template <>
 struct fmt::formatter<Glib::ustring>
@@ -48,7 +44,7 @@ struct fmt::formatter<Glib::ustring>
 	{
 		return ctx.begin();
 	}
-
+	
 	template <typename FormatContext>
 	auto format(const Glib::ustring &s, FormatContext &ctx)
 	{
@@ -56,24 +52,34 @@ struct fmt::formatter<Glib::ustring>
 	}
 };
 
+void show_centered_dialog(std::string title, std::string secondary = "");
+
 template<class Elem, class Traits>
-inline void hex_dump(const void *aData, std::size_t aLength,
-    std::basic_ostream<Elem, Traits> &stream, std::size_t width = 16)
+void hex_dump(
+	const void *aData,
+	std::size_t aLength,
+    	std::basic_ostream<Elem, Traits> &stream,
+    	std::size_t width = 16)
 {
 	const char* const start = static_cast<const char*>(aData);
 	const char* const end = start + aLength;
 	const char* line = start;
-
+	
 	while (line != end)
 	{
 		stream.width(4);
 		stream.fill('0');
 		stream << std::hex << line - start << " ";
-		std::size_t lineLength = std::min(width, static_cast<std::size_t>(end - line));
+		std::size_t lineLength = std::min(
+			width,
+			static_cast<std::size_t>(end - line));
 		for (std::size_t pass = 1; pass <= 2; ++pass)
 		{
-			for (const char *next = line; next != end && next != line + width; ++next)
-			{
+			for (
+				const char *next = line;
+				next != end && next != line + width;
+				++next
+				){
 				char ch = *next;
 				switch (pass)
 				{
@@ -83,60 +89,26 @@ inline void hex_dump(const void *aData, std::size_t aLength,
 					case 2:
 						if (next != line)
 							stream << " ";
-
+						
 						stream.width(2);
 						stream.fill('0');
 						stream << std::hex <<
-						    std::uppercase <<
-						    static_cast<int>(static_cast<unsigned char>(ch));
+						       std::uppercase <<
+						       static_cast<int>(static_cast<unsigned char>(ch));
 						break;
 				}
 			}
 			if (pass == 1 && lineLength != width)
 				stream << std::string(width - lineLength, ' ');
-
+			
 			stream << " ";
 		}
-
+		
 		stream << std::endl;
 		line = line + lineLength;
 	}
 }
 
-inline std::string executable_dir()
-{
-#if defined(__APPLE__) && defined(__MACH__)
-	uint32_t sz = 256;
-	char *exe_path = static_cast<char*>(malloc(sz * sizeof(char)));
-
-	while (_NSGetExecutablePath(exe_path, &sz) != 0)
-	{
-		sz *= 2;
-		exe_path = static_cast<char*>(
-			realloc(exe_path, sz * sizeof(char)));
-	}
-	
-	char *canon_path = realpath(exe_path, nullptr);
-	if (canon_path != nullptr) {
-		std::strncpy(exe_path, canon_path, sz);
-		free(canon_path);
-	}
-
-	std::string exe_path_ccstr(exe_path);
-	exe_path_ccstr.erase(exe_path_ccstr.rfind("/"));
-	exe_path_ccstr.erase(exe_path_ccstr.rfind("/"));
-	
-	free(exe_path);
-	
-	return exe_path_ccstr;
-#elif defined(__unix__)
-	return filesystem::read_symlink("/proc/self/exe")
-		.parent_path()
-		.native();
-#else
-	throw std::runtime_error(
-		"Unimplemented executable_dir() for current platform.");
-#endif
-}
+std::string executable_dir();
 
 #endif //DEVCLIENT_UTILS_HH

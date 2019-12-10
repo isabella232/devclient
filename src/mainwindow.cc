@@ -238,6 +238,8 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
 	m_address_row.get_widget().set_text("127.0.0.1");
 	m_ocd_port_row.get_widget().set_text("4444");
 	m_gdb_port_row.get_widget().set_text("3333");
+	
+	m_status_row.get_widget().set_text("Ready");
 
 	m_textbuffer = Gtk::TextBuffer::create();
 	m_textview.set_editable(false);
@@ -291,21 +293,28 @@ JtagTab::start_clicked()
 	    std::stoi(m_ocd_port_row.get_widget().get_text()),
 	    m_board_row.get_widget().get_filename());
 
-	m_server->output_produced.connect(sigc::mem_fun(*this, &JtagTab::output_ready));
+	m_server->output_produced.connect(
+		sigc::mem_fun(*this, &JtagTab::output_ready));
 
 	try {
 		m_server->start();
 	} catch (const std::runtime_error &err) {
-		Gtk::MessageDialog msg("Failed to start JTAG server.");
-		msg.set_secondary_text(err.what());
-		msg.run();
+		show_centered_dialog(
+			"Failed to start JTAG server.", err.what());
 	}
+	
+	m_status_row.get_widget().set_text("Running");
+	m_reset.set_sensitive(false);
+	m_bypass.set_sensitive(false);
 }
 
 void
 JtagTab::stop_clicked()
 {
 	m_server.reset();
+	m_status_row.get_widget().set_text("Stopped");
+	m_reset.set_sensitive(true);
+	m_bypass.set_sensitive(true);
 }
 
 void

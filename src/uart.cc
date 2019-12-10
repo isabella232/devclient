@@ -44,25 +44,19 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 	if (m_context.open(device.vid, device.pid, device.description,
 	    device.serial) != 0)
 	{
-		Gtk::MessageDialog warning("Failed to open device.");
-		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
-		warning.run();
+		show_centered_dialog("Failed to open device.");
 		return;
 	}
 	
 	if (m_context.bitbang_disable() != 0)
 	{
-		Gtk::MessageDialog warning("Failed to disable bitbang mode.");
-		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
-		warning.run();
+		show_centered_dialog("Failed to set bitbang_disable.");
 		return;
 	}
 
 	if (m_context.set_baud_rate(baudrate) != 0)
 	{
-		Gtk::MessageDialog warning("Failed to set the baud rate.");
-		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
-		warning.run();
+		show_centered_dialog("Failed to set the baud rate.");
 		return;
 	}
 

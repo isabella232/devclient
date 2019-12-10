@@ -25,7 +25,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/contrib/filesystem-1.2.10/includ
 include_directories(include)
 
 add_executable(devclient
-        src/main.cc
+        src/utils.cc
         src/uart.cc
         src/jtag.cc
         src/i2c.cc
@@ -34,7 +34,9 @@ add_executable(devclient
         src/log.cc
         src/dtb.cc
         src/deviceselect.cc
-        src/mainwindow.cc src/application.cc)
+        src/application.cc
+        src/mainwindow.cc
+        src/main.cc)
 
 message("-- Cloning OpenOCD")
 
