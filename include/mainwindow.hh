@@ -50,6 +50,8 @@ protected:
 	void launch_terminal_clicked();
 	void client_connected(Glib::RefPtr<Gio::SocketAddress> addr);
 	void client_disconnected(Glib::RefPtr<Gio::SocketAddress> addr);
+	void on_address_changed();
+	void on_port_changed();
 
 	FormRow<Gtk::Entry> m_address_row;
 	FormRow<Gtk::Entry> m_port_row;
@@ -63,8 +65,14 @@ protected:
 	Gtk::Button m_start;
 	Gtk::Button m_stop;
 	Gtk::Button m_terminal;
-	MainWindow *m_parent;
+	
+	sigc::connection m_addr_changed_conn;
+	sigc::connection m_port_changed_conn;
+	
 	std::shared_ptr<Uart> m_uart;
+	
+	MainWindow *m_parent;
+	
 	const Device &m_device;
 };
 
@@ -77,9 +85,13 @@ protected:
 	void start_clicked();
 	void stop_clicked();
 	void bypass_clicked();
+	
 	void on_output_ready(const std::string &output);
 	void on_server_start();
 	void on_server_exit();
+	void on_address_changed();
+	void on_ocd_port_changed();
+	void on_gdb_port_changed();
 	
 	FormRow<Gtk::Entry> m_address_row;
 	FormRow<Gtk::Entry> m_gdb_port_row;
@@ -94,8 +106,15 @@ protected:
 	Gtk::Button m_stop;
 	Gtk::Button m_reset;
 	Gtk::Button m_bypass;
+	
+	sigc::connection m_addr_changed_conn;
+	sigc::connection m_ocd_port_changed_conn;
+	sigc::connection m_gdb_port_changed_conn;
+	
 	std::shared_ptr<JtagServer> m_server;
+	
 	MainWindow *m_parent;
+	
 	const Device &m_device;
 };
 

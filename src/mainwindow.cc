@@ -27,6 +27,7 @@
  */
 
 #include <string>
+#include <cctype>
 #include <gtkmm/dialog.h>
 #include <fmt/format.h>
 #include <formrow.hh>
@@ -92,7 +93,16 @@ SerialTab::SerialTab(MainWindow *parent, const Device &dev):
     m_parent(parent)
 {
 	m_address_row.get_widget().set_text("127.0.0.1");
+	m_addr_changed_conn = m_address_row
+		.get_widget()
+		.signal_changed()
+		.connect(sigc::mem_fun(*this, &SerialTab::on_address_changed));
 	m_port_row.get_widget().set_text("2222");
+	m_port_changed_conn = m_port_row
+		.get_widget()
+		.signal_changed()
+		.connect(sigc::mem_fun(*this, &SerialTab::on_port_changed));
+	
 	m_status_row.get_widget().set_text("Stopped");
 	m_baud_row.get_widget().append("9600");
 	m_baud_row.get_widget().append("19200");
@@ -219,6 +229,26 @@ SerialTab::client_disconnected(Glib::RefPtr<Gio::SocketAddress> addr)
 	});
 }
 
+void SerialTab::on_address_changed()
+{
+	Glib::ustring output;
+	for (const unsigned int &c : m_address_row.get_widget().get_text())
+		if (isdigit((char)c) || c == 0x2E) output += c;
+	m_addr_changed_conn.block();
+	m_address_row.get_widget().set_text(output);
+	m_addr_changed_conn.unblock();
+}
+
+void SerialTab::on_port_changed()
+{
+	Glib::ustring output;
+	for (const unsigned int &c : m_port_row.get_widget().get_text())
+		if (isdigit((char)c)) output += c;
+	m_port_changed_conn.block();
+	m_port_row.get_widget().set_text(output);
+	m_port_changed_conn.unblock();
+}
+
 JtagTab::JtagTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
     m_device(dev),
@@ -236,8 +266,22 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
 	Pango::FontDescription font("Monospace 9");
 
 	m_address_row.get_widget().set_text("127.0.0.1");
+	m_addr_changed_conn = m_address_row
+		.get_widget()
+		.signal_changed()
+		.connect(sigc::mem_fun(*this, &JtagTab::on_address_changed));
+	
 	m_ocd_port_row.get_widget().set_text("4444");
+	m_ocd_port_changed_conn = m_ocd_port_row
+		.get_widget()
+		.signal_changed()
+		.connect(sigc::mem_fun(*this, &JtagTab::on_ocd_port_changed));
+	
 	m_gdb_port_row.get_widget().set_text("3333");
+	m_gdb_port_changed_conn = m_gdb_port_row
+		.get_widget()
+		.signal_changed()
+		.connect(sigc::mem_fun(*this, &JtagTab::on_gdb_port_changed));
 	
 	m_status_row.get_widget().set_text("Ready");
 
@@ -255,12 +299,12 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
 	m_buttons.pack_start(m_reset);
 	m_buttons.pack_start(m_bypass);
 
-	m_start.signal_clicked().connect(sigc::mem_fun(*this,
-	    &JtagTab::start_clicked));
-	m_stop.signal_clicked().connect(sigc::mem_fun(*this,
-	    &JtagTab::stop_clicked));
-	m_bypass.signal_clicked().connect(sigc::mem_fun(*this,
-	    &JtagTab::bypass_clicked));
+	m_start.signal_clicked().connect(
+		sigc::mem_fun(*this, &JtagTab::start_clicked));
+	m_stop.signal_clicked().connect(
+		sigc::mem_fun(*this, &JtagTab::stop_clicked));
+	m_bypass.signal_clicked().connect(
+		sigc::mem_fun(*this, &JtagTab::bypass_clicked));
 
 	set_border_width(5);
 	pack_start(m_address_row, false, true);
@@ -344,13 +388,43 @@ JtagTab::on_server_exit()
 	m_bypass.set_sensitive(true);
 }
 
+void JtagTab::on_address_changed()
+{
+	Glib::ustring output;
+	for (const unsigned int &c : m_address_row.get_widget().get_text())
+		if (isdigit((char)c) || c == 0x2E) output += c;
+	m_addr_changed_conn.block();
+	m_address_row.get_widget().set_text(output);
+	m_addr_changed_conn.unblock();
+}
+
+void JtagTab::on_ocd_port_changed()
+{
+	Glib::ustring output;
+	for (const unsigned int &c : m_ocd_port_row.get_widget().get_text())
+		if (isdigit((char)c)) output += c;
+	m_ocd_port_changed_conn.block();
+	m_ocd_port_row.get_widget().set_text(output);
+	m_ocd_port_changed_conn.unblock();
+}
+
+void JtagTab::on_gdb_port_changed()
+{
+	Glib::ustring output;
+	for (const unsigned int &c : m_gdb_port_row.get_widget().get_text())
+		if (isdigit((char)c)) output += c;
+	m_gdb_port_changed_conn.block();
+	m_gdb_port_row.get_widget().set_text(output);
+	m_gdb_port_changed_conn.unblock();
+}
+
 EepromTab::EepromTab(MainWindow *parent, const Device &dev):
-    Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
-    m_device(dev),
-    m_read("Read"),
-    m_write("Write"),
-    m_save("Save buffer to file"),
-    m_parent(parent)
+	Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
+	m_device(dev),
+	m_read("Read"),
+	m_write("Write"),
+	m_save("Save buffer to file"),
+	m_parent(parent)
 {
 	Pango::FontDescription font("Monospace 9");
 
