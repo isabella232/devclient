@@ -84,7 +84,10 @@ JtagServer::start()
 		    Glib::SlotSpawnChildSetup(), &m_pid, nullptr,
 		    &stdout_fd, &stderr_fd);
 	} catch (const Glib::Error &err) {
-		throw std::runtime_error(err.what());
+		Gtk::MessageDialog warning("Failed to run JTAG server: " + err.what());
+		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
+		warning.run();
+		return;
 	}
 
 	m_out = Gio::UnixInputStream::create(stdout_fd, true);
@@ -126,15 +129,35 @@ JtagServer::bypass(const Device &device)
 
 	if (context.open(device.vid, device.pid, device.description,
 	    device.serial) != 0)
-		throw std::runtime_error("Failed to open device");
+	{
+		Gtk::MessageDialog warning("Failed to open device.");
+		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
+		warning.run();
+		return;
+	}
 
 	if (context.set_bitmode(0xff, BITMODE_RESET) != 0)
-		throw std::runtime_error("Failed to set bitmode");
+	{
+		Gtk::MessageDialog warning("Failed to set BITMODE_RESET.");
+		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
+		warning.run();
+		return;
+	}
 
 	if (context.set_bitmode(0, BITMODE_BITBANG) != 0)
-		throw std::runtime_error("Failed to set bitmode");
+	{
+		Gtk::MessageDialog warning("Failed to set BITMODE_BITBANG.");
+		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
+		warning.run();
+		return;
+	}
 
 	Logger::info("Bypass mode enabled");
+	
+	Gtk::MessageDialog info("Bypass mode enabled.");
+	info.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
+	info.run();
+	
 	context.close();
 }
 

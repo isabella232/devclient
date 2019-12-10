@@ -62,6 +62,7 @@ MainWindow::~MainWindow() {}
 void MainWindow::show_deviceselect_dialog()
 {
 	DeviceSelectDialog dialog;
+	dialog.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
 	dialog.run();
 	if (dialog.get_selected_device().has_value())
 		configure_devices(dialog.get_selected_device().value());
@@ -294,7 +295,7 @@ JtagTab::start_clicked()
 	try {
 		m_server->start();
 	} catch (const std::runtime_error &err) {
-		Gtk::MessageDialog msg("Failed to start JTAG server");
+		Gtk::MessageDialog msg("Failed to start JTAG server.");
 		msg.set_secondary_text(err.what());
 		msg.run();
 	}
@@ -309,10 +310,7 @@ JtagTab::stop_clicked()
 void
 JtagTab::bypass_clicked()
 {
-	Gtk::MessageDialog msg("Bypass mode enabled.");
-
 	JtagServer::bypass(m_device);
-	msg.run();
 }
 
 EepromTab::EepromTab(MainWindow *parent, const Device &dev):

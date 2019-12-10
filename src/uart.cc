@@ -114,9 +114,10 @@ Uart::usb_worker()
 }
 
 bool
-Uart::socket_worker(const Glib::RefPtr<Gio::SocketConnection> &conn,
-    const Glib::RefPtr<Glib::Object> &source)
-{
+Uart::socket_worker(
+	const Glib::RefPtr<Gio::SocketConnection> &conn,
+    	const Glib::RefPtr<Glib::Object> &source
+){
 	Glib::RefPtr<Gio::InputStream> istream;
 	Glib::RefPtr<Gio::OutputStream> ostream;
 	uint8_t buffer[BUFSIZE];
