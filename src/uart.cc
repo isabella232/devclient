@@ -42,13 +42,28 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 
 	if (m_context.open(device.vid, device.pid, device.description,
 	    device.serial) != 0)
-		throw std::runtime_error("Failed to open device");
-
+	{
+		Gtk::MessageDialog warning("Failed to open device.");
+		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
+		warning.run();
+		return;
+	}
+	
 	if (m_context.bitbang_disable() != 0)
-		throw std::runtime_error("Failed to disable bitbang mode");
+	{
+		Gtk::MessageDialog warning("Failed to disable bitbang mode.");
+		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
+		warning.run();
+		return;
+	}
 
 	if (m_context.set_baud_rate(baudrate) != 0)
-		throw std::runtime_error("Failed to set the baud rate");
+	{
+		Gtk::MessageDialog warning("Failed to set the baud rate.");
+		warning.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
+		warning.run();
+		return;
+	}
 
 	m_socket_service = Gio::ThreadedSocketService::create(10);
 	m_socket_service->add_address(
@@ -108,8 +123,14 @@ Uart::usb_worker()
 		if (ret > 0)
 			Logger::debug("read {} bytes from USB", ret);
 
-		for (auto &i: m_connections)
-			i->get_output_stream()->write(buffer, ret);
+		for (auto &connection: m_connections)
+		{
+			if (connection != nullptr)
+				connection
+					->get_output_stream()
+					->write(buffer, ret);
+		}
+		
 	}
 }
 
