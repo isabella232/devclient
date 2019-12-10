@@ -28,7 +28,7 @@
  
 #include <vector>
 #include <giomm.h>
-#include <gtkmm/main.h>
+#include <gtkmm.h>
 #include <ftdi.hpp>
 #include <log.hh>
 #include <jtag.hh>
