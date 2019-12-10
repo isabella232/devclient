@@ -45,7 +45,8 @@ MainWindow::MainWindow():
 {
 	set_title("Conclusive developer cable client");
 	set_size_request(640, 480);
-
+	set_position(Gtk::WIN_POS_CENTER_ALWAYS);
+	
 	m_notebook.append_page(m_uart_tab, "Serial console");
 	m_notebook.append_page(m_jtag_tab, "JTAG");
 	m_notebook.append_page(m_eeprom_tab, "EEPROM");
