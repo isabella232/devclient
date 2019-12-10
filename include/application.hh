@@ -11,7 +11,7 @@ namespace Devclient
 	class Application
 	{
 	public:
-		static Devclient::Application& instance();
+		static Application *instance();
 		
 		~Application();
 		
@@ -23,8 +23,7 @@ namespace Devclient
 	private:
 		Application();
 		
-		static std::unique_ptr<Devclient::Application> m_instance;
-		static std::once_flag m_once;
+		static Application *m_instance;
 		
 		Glib::RefPtr<Gtk::Application> m_app;
 		MainWindow *m_window;

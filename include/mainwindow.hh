@@ -145,7 +145,7 @@ public:
 
 	Gpio *m_gpio;
 	I2C *m_i2c;
-
+	
 protected:
 	Gtk::Notebook m_notebook;
 	SerialTab m_uart_tab;
@@ -154,7 +154,8 @@ protected:
 	GpioTab m_gpio_tab;
 	Device m_device;
 	
-	void on_close_deviceselect(int sig_id);
+	void show_deviceselect_dialog();
+	void configure_devices(Device device);
 };
 
 #endif /* DEVCLIENT_MAINWINDOW_HH */

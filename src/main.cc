@@ -147,5 +147,5 @@ main(int argc, char *const argv[])
 		uart = std::unique_ptr<Uart>(new Uart(dev, saddr, 115200));
 	}
 	
-	return Devclient::Application::instance().run();
+	return Devclient::Application::instance()->run();
 }

@@ -1,8 +1,15 @@
 #include <application.hh>
 #include <mainwindow.hh>
 
-std::unique_ptr<Devclient::Application> Devclient::Application::m_instance;
-std::once_flag Devclient::Application::m_once;
+Devclient::Application *Devclient::Application::m_instance = nullptr;
+
+Devclient::Application *Devclient::Application::instance()
+{
+	if (Devclient::Application::m_instance == nullptr)
+		Devclient::Application::m_instance
+			= new Devclient::Application();
+	return Devclient::Application::m_instance;
+}
 
 Devclient::Application::Application() :
 	m_app(Gtk::Application::create("pl.conclusive.devclient")),
@@ -14,17 +21,6 @@ Devclient::Application::~Application()
 	delete m_window;
 }
 
-Devclient::Application& Devclient::Application::instance()
-{
-	std::call_once(
-		Devclient::Application::m_once,
-		[]{
-			Devclient::Application::m_instance.reset(
-				new Application);
-		});
-	return *Devclient::Application::m_instance.get();
-}
-
 int Devclient::Application::run()
 {
 	return m_app->run(*m_window);
@@ -32,5 +28,5 @@ int Devclient::Application::run()
 
 void Devclient::Application::close()
 {
-	// Gtk::Main::quit();
+	Gtk::Main::quit();
 }

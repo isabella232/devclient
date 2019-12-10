@@ -43,8 +43,6 @@ MainWindow::MainWindow():
     m_eeprom_tab(this, m_device),
     m_gpio_tab(this, m_device)
 {
-	DeviceSelectDialog dialog;
-
 	set_title("Conclusive developer cable client");
 	set_size_request(640, 480);
 
@@ -53,24 +51,28 @@ MainWindow::MainWindow():
 	m_notebook.append_page(m_eeprom_tab, "EEPROM");
 	m_notebook.append_page(m_gpio_tab, "GPIO");
 	add(m_notebook);
+	
 	show_all_children();
 	
-	dialog.signal_response().connect(
-		sigc::mem_fun(*this, &MainWindow::on_close_deviceselect));
-	
-	dialog.run();
-	
-	m_device = dialog.get_selected_device().value();
-	m_i2c = new I2C(m_device, 100000);
-	m_gpio = new Gpio(m_device);
-	m_gpio->set(0);
+	show_deviceselect_dialog();
 }
 
 MainWindow::~MainWindow() {}
 
-void MainWindow::on_close_deviceselect(int sig_id)
+void MainWindow::show_deviceselect_dialog()
 {
-	Devclient::Application::instance().close();
+	DeviceSelectDialog dialog;
+	dialog.run();
+	if (dialog.get_selected_device().has_value())
+		configure_devices(dialog.get_selected_device().value());
+}
+
+void MainWindow::configure_devices(Device device)
+{
+	m_device = device;
+	m_i2c = new I2C(m_device, 100000);
+	m_gpio = new Gpio(m_device);
+	m_gpio->set(0);
 }
 
 SerialTab::SerialTab(MainWindow *parent, const Device &dev):
