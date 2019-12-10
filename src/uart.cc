@@ -30,6 +30,7 @@
 #include <log.hh>
 #include <utils.hh>
 #include <uart.hh>
+#include <gtkmm.h>
 
 #define BUFSIZE		4096
 
@@ -117,6 +118,7 @@ Uart::usb_worker()
 
 	for (;;) {
 		ret = m_context.read(buffer, sizeof(buffer));
+		
 		if (ret < 0 || !m_running)
 			break;
 
@@ -125,7 +127,7 @@ Uart::usb_worker()
 
 		for (auto &connection: m_connections)
 		{
-			if (connection != nullptr)
+			if (connection && connection->get_output_stream())
 				connection
 					->get_output_stream()
 					->write(buffer, ret);
@@ -151,7 +153,7 @@ Uart::socket_worker(
 	istream = conn->get_input_stream();
 	ostream = conn->get_output_stream();
 	m_connections.push_back(conn);
-	connected.emit(conn->get_remote_address());
+	m_connected.emit(conn->get_remote_address());
 
 	/* Disable local echo */
 	ostream->write("\xFF\xFB\x01\xFF\xFB\x03");
@@ -169,8 +171,10 @@ Uart::socket_worker(
 			    ret, written);
 		}
 	}
-
-	disconnected.emit(conn->get_remote_address());
+	
+	if (m_disconnected && conn)
+		m_disconnected.emit(conn->get_remote_address());
+	
 	Logger::info("UART: connection from {} ended",
 	    conn->get_remote_address()->to_string());
 

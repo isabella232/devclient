@@ -46,8 +46,8 @@ public:
 	void start();
 	void stop();
 
-	sigc::signal<void, Glib::RefPtr<Gio::SocketAddress>> connected;
-	sigc::signal<void, Glib::RefPtr<Gio::SocketAddress>> disconnected;
+	sigc::signal<void, Glib::RefPtr<Gio::SocketAddress>> m_connected;
+	sigc::signal<void, Glib::RefPtr<Gio::SocketAddress>> m_disconnected;
 
 protected:
 	virtual void usb_worker();
