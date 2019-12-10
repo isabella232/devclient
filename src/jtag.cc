@@ -77,7 +77,7 @@ JtagServer::start()
 
 	if (m_running)
 		return;
-
+	
 	try {
 		Glib::spawn_async_with_pipes("/tmp", argv,
 		    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
@@ -88,7 +88,11 @@ JtagServer::start()
 			"Failed to start JTAG server.", err.what());
 		return;
 	}
-
+	
+	Glib::signal_child_watch().connect(
+		sigc::mem_fun(*this, &JtagServer::child_exited),
+		m_pid);
+	
 	m_out = Gio::UnixInputStream::create(stdout_fd, true);
 	m_err = Gio::UnixInputStream::create(stderr_fd, true);
 
@@ -97,10 +101,6 @@ JtagServer::start()
 
 	m_err->read_bytes_async(BUFFER_SIZE, sigc::bind(sigc::mem_fun(
 	    *this, &JtagServer::output_ready), m_err));
-
-	Glib::signal_child_watch().connect(
-	    sigc::mem_fun(*this, &JtagServer::child_exited),
-	    m_pid);
 
 	setpgid(m_pid, getpid());
 	
@@ -120,8 +120,6 @@ JtagServer::stop()
 	/* Crappy, there should be a better way to do this */
 	while (m_running)
 		Gtk::Main::iteration();
-	
-	on_server_exit.emit();
 }
 
 void
@@ -183,5 +181,6 @@ void
 JtagServer::child_exited(Glib::Pid pid, int code)
 {
 	Logger::info("OpenOCD exited with code {} (pid {})", code, pid);
+	on_server_exit.emit();
 	m_running = false;
 }
