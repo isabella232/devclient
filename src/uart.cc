@@ -172,7 +172,9 @@ Uart::socket_worker(
 		}
 	}
 	
-	if (m_disconnected && conn)
+	// TODO: If we kill a terminal w/ telnet while the UART socket is closed
+	// TODO: we won't clean the client address list from the missing address
+	if (conn)
 		m_disconnected.emit(conn->get_remote_address());
 	
 	Logger::info("UART: connection from {} ended",

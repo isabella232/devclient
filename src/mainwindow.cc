@@ -144,9 +144,9 @@ SerialTab::start_clicked()
 	    std::stoi(m_port_row.get_widget().get_text()));
 
 	m_uart = std::make_shared<Uart>(m_device, addr, baud);
-	m_uart->connected.connect(sigc::mem_fun(*this,
+	m_uart->m_connected.connect(sigc::mem_fun(*this,
 	    &SerialTab::client_connected));
-	m_uart->disconnected.connect(sigc::mem_fun(*this,
+	m_uart->m_disconnected.connect(sigc::mem_fun(*this,
 	    &SerialTab::client_disconnected));
 	m_uart->start();
 	m_status_row.get_widget().set_text("Running");
