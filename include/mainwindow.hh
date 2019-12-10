@@ -77,8 +77,10 @@ protected:
 	void start_clicked();
 	void stop_clicked();
 	void bypass_clicked();
-	void output_ready(const std::string &output);
-
+	void on_output_ready(const std::string &output);
+	void on_server_start();
+	void on_server_exit();
+	
 	FormRow<Gtk::Entry> m_address_row;
 	FormRow<Gtk::Entry> m_gdb_port_row;
 	FormRow<Gtk::Entry> m_ocd_port_row;

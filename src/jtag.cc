@@ -103,7 +103,10 @@ JtagServer::start()
 	    m_pid);
 
 	setpgid(m_pid, getpid());
+	
 	m_running = true;
+	
+	on_server_start.emit();
 }
 
 void
@@ -117,6 +120,8 @@ JtagServer::stop()
 	/* Crappy, there should be a better way to do this */
 	while (m_running)
 		Gtk::Main::iteration();
+	
+	on_server_exit.emit();
 }
 
 void
@@ -126,9 +131,10 @@ JtagServer::bypass(const Device &device)
 
 	context.set_interface(INTERFACE_B);
 
-	if (context.open(device.vid, device.pid, device.description,
-	    device.serial) != 0)
-	{
+	if (
+		context.open(device.vid, device.pid, device.description,
+			device.serial) != 0
+	){
 		show_centered_dialog("Failed to open device.");
 		return;
 	}
@@ -168,7 +174,7 @@ JtagServer::output_ready(Glib::RefPtr<Gio::AsyncResult> &result,
 	if (nread == 0)
 		return;
 
-	output_produced.emit(std::string(ptr, nread));
+	on_output_produced.emit(std::string(ptr, nread));
 	stream->read_bytes_async(BUFFER_SIZE, sigc::bind(sigc::mem_fun(
 	    *this, &JtagServer::output_ready), stream));
 }

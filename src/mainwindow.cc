@@ -273,54 +273,75 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
 }
 
 void
-JtagTab::output_ready(const std::string &output)
-{
-	Glib::ustring text = m_textbuffer->get_text();
-
-	text += output;
-	m_textbuffer->set_text(text);
-	m_textview.scroll_to(m_textbuffer->get_insert());
-}
-
-void
 JtagTab::start_clicked()
 {
 	Glib::RefPtr<Gio::InetAddress> addr;
 
 	addr = Gio::InetAddress::create(m_address_row.get_widget().get_text());
+	
 	m_server = std::make_shared<JtagServer>(m_device, addr,
 	    std::stoi(m_gdb_port_row.get_widget().get_text()),
 	    std::stoi(m_ocd_port_row.get_widget().get_text()),
 	    m_board_row.get_widget().get_filename());
+	
+	m_server->on_output_produced.connect(
+		sigc::mem_fun(*this, &JtagTab::on_output_ready));
+	m_server->on_server_start.connect(
+		sigc::mem_fun(*this, &JtagTab::on_server_start));
+	m_server->on_server_exit.connect(
+		sigc::mem_fun(*this, &JtagTab::on_server_exit));
 
-	m_server->output_produced.connect(
-		sigc::mem_fun(*this, &JtagTab::output_ready));
-
-	try {
+	try
+	{
 		m_server->start();
-	} catch (const std::runtime_error &err) {
+	}
+	catch (const std::runtime_error &err)
+	{
 		show_centered_dialog(
 			"Failed to start JTAG server.", err.what());
 	}
-	
-	m_status_row.get_widget().set_text("Running");
-	m_reset.set_sensitive(false);
-	m_bypass.set_sensitive(false);
 }
 
 void
 JtagTab::stop_clicked()
 {
-	m_server.reset();
-	m_status_row.get_widget().set_text("Stopped");
-	m_reset.set_sensitive(true);
-	m_bypass.set_sensitive(true);
+	if (m_server)
+	{
+		m_server->stop();
+		m_server.reset();
+	}
 }
 
 void
 JtagTab::bypass_clicked()
 {
 	JtagServer::bypass(m_device);
+}
+
+void
+JtagTab::on_output_ready(const std::string &output)
+{
+	Glib::ustring text = m_textbuffer->get_text();
+	
+	text += output;
+	m_textbuffer->set_text(text);
+	m_textview.scroll_to(m_textbuffer->get_insert());
+}
+
+void
+JtagTab::on_server_start()
+{
+	m_status_row.get_widget().set_text("Running");
+	m_reset.set_sensitive(false);
+	m_bypass.set_sensitive(false);
+}
+
+void
+JtagTab::on_server_exit()
+{
+	m_status_row.get_widget().set_text("Stopped");
+	m_reset.set_sensitive(true);
+	m_bypass.set_sensitive(true);
 }
 
 EepromTab::EepromTab(MainWindow *parent, const Device &dev):

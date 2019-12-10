@@ -43,7 +43,9 @@ public:
 	void stop();
 	static void bypass(const Device &device);
 
-	sigc::signal<void, const std::string &> output_produced;
+	sigc::signal<void, const std::string &> on_output_produced;
+	sigc::signal<void> on_server_start;
+	sigc::signal<void> on_server_exit;
 
 protected:
 	void child_exited(Glib::Pid pid, int code);
