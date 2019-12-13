@@ -12,6 +12,8 @@ add_subdirectory(contrib/fmt-6.0.0)
 add_subdirectory(contrib/filesystem-1.2.10)
 
 find_package(PkgConfig)
+find_package(Boost)
+find_package(libftdi)
 
 pkg_check_modules(GTKMM gtkmm-3.0)
 pkg_check_modules(GIOMM giomm-2.4)
@@ -21,6 +23,7 @@ link_directories(${GTKMM_LIBRARY_DIRS})
 include_directories(${GIOMM_INCLUDE_DIRS})
 include_directories(${GTKMM_INCLUDE_DIRS})
 include_directories(${LIBFTDI_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/contrib/filesystem-1.2.10/include)
 include_directories(include)
 
@@ -73,7 +76,12 @@ add_custom_target(dtc ALL
         COMMAND make install PREFIX=/usr/local DESTDIR=${CMAKE_BINARY_DIR}/tools NO_PYTHON=1
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/dtc)
 
-target_link_libraries(devclient ${GIOMM_LIBRARIES} ${GTKMM_LIBRARIES} ${LIBFTDI_LIBRARIES} fmt)
+target_link_libraries(devclient
+        ${GIOMM_LIBRARIES}
+        ${GTKMM_LIBRARIES}
+        ${LIBFTDI_LIBRARIES}
+        ${Boost_LIBRARIES}
+        fmt)
 target_link_libraries(devclient pthread)
 
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
