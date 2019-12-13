@@ -51,8 +51,9 @@ public:
 	sigc::signal<void, Glib::RefPtr<Gio::SocketAddress>> m_disconnected;
 
 protected:
-	virtual void usb_worker();
-	virtual bool socket_worker(
+	void remove_connection(const Glib::RefPtr<Gio::SocketConnection> &conn);
+	void usb_worker();
+	bool socket_worker(
 	    const Glib::RefPtr<Gio::SocketConnection> &conn,
 	    const Glib::RefPtr<Glib::Object> &source);
 

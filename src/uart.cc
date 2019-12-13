@@ -42,20 +42,22 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 	m_context.set_interface(INTERFACE_C);
 
 	if (m_context.open(device.vid, device.pid, device.description,
-	    device.serial) != 0)
-	{
+	    device.serial) != 0) {
 		show_centered_dialog("Failed to open device.");
 		return;
 	}
 	
-	if (m_context.bitbang_disable() != 0)
-	{
+	if (m_context.set_bitmode(0xff, BITMODE_RESET) != 0) {
+		show_centered_dialog("Failed to reset bitmode.");
+		return;
+	}
+
+	if (m_context.bitbang_disable() != 0) {
 		show_centered_dialog("Failed to set bitbang_disable.");
 		return;
 	}
 
-	if (m_context.set_baud_rate(baudrate) != 0)
-	{
+	if (m_context.set_baud_rate(baudrate) != 0) {
 		show_centered_dialog("Failed to set the baud rate.");
 		return;
 	}
@@ -116,17 +118,24 @@ Uart::usb_worker()
 		if (ret < 0 || !m_running)
 			break;
 
+		if (ret == 0)
+			continue;
+
 		if (ret > 0)
 			Logger::debug("read {} bytes from USB", ret);
 
-		for (auto &connection: m_connections)
-		{
-			if (connection && connection->get_output_stream())
-				connection
-					->get_output_stream()
-					->write(buffer, ret);
+		for (auto &i: m_connections) {
+			try {
+				i->get_output_stream()->write(buffer, ret);
+			} catch (const Gio::Error &err) {
+				Logger::warning(
+				    "UART: error sending data to {}: {}",
+				    i->get_remote_address()->to_string(),
+				    err.what());
+				remove_connection(i);
+				continue;
+			}
 		}
-		
 	}
 }
 
@@ -153,9 +162,14 @@ Uart::socket_worker(
 	ostream->write("\xFF\xFB\x01\xFF\xFB\x03");
 
 	for (;;) {
-		ret = istream->read(buffer, sizeof(buffer));
-		if (ret == 0)
+		try {
+			ret = istream->read(buffer, sizeof(buffer));
+			if (ret == 0)
+				break;
+		} catch (const Gio::Error &err) {
+			Logger::warning("UART: I/O error: {}", err.what());
 			break;
+		}
 
 		Logger::debug("UART: read {} bytes from socket", ret);
 
@@ -174,5 +188,17 @@ Uart::socket_worker(
 	Logger::info("UART: connection from {} ended",
 	    conn->get_remote_address()->to_string());
 
+	remove_connection(conn);
 	return (false);
+}
+
+void
+Uart::remove_connection(const Glib::RefPtr<Gio::SocketConnection> &conn)
+{
+	auto it = std::find(m_connections.begin(), m_connections.end(), conn);
+
+	if (it != m_connections.end()) {
+		m_disconnected.emit(conn->get_remote_address());
+		m_connections.erase(it);
+	}
 }

@@ -299,12 +299,14 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
 	m_buttons.pack_start(m_reset);
 	m_buttons.pack_start(m_bypass);
 
-	m_start.signal_clicked().connect(
-		sigc::mem_fun(*this, &JtagTab::start_clicked));
-	m_stop.signal_clicked().connect(
-		sigc::mem_fun(*this, &JtagTab::stop_clicked));
-	m_bypass.signal_clicked().connect(
-		sigc::mem_fun(*this, &JtagTab::bypass_clicked));
+	m_start.signal_clicked().connect(sigc::mem_fun(*this,
+	    &JtagTab::start_clicked));
+	m_stop.signal_clicked().connect(sigc::mem_fun(*this,
+	    &JtagTab::stop_clicked));
+	m_reset.signal_clicked().connect(sigc::mem_fun(*this,
+	    &JtagTab::reset_clicked));
+	m_bypass.signal_clicked().connect(sigc::mem_fun(*this,
+	    &JtagTab::bypass_clicked));
 
 	set_border_width(5);
 	pack_start(m_address_row, false, true);
@@ -354,6 +356,12 @@ JtagTab::stop_clicked()
 		m_server->stop();
 		m_server.reset();
 	}
+}
+
+void
+JtagTab::reset_clicked()
+{
+	JtagServer::reset(m_device);
 }
 
 void
@@ -464,7 +472,14 @@ EepromTab::write_clicked()
 	m_blob = std::make_shared<std::vector<uint8_t>>();
 	m_dtb = std::make_shared<DTB>(m_textual, m_blob);
 
-	m_dtb->compile(sigc::mem_fun(*this, &EepromTab::compile_done));
+	try {
+		m_dtb->compile(sigc::mem_fun(*this, &EepromTab::compile_done));
+	} catch (const std::runtime_error &err) {
+		Gtk::MessageDialog msg("Write error");
+
+		msg.set_secondary_text(err.what());
+		msg.run();
+	}
 }
 
 void
@@ -476,16 +491,22 @@ EepromTab::read_clicked()
 	m_blob = std::make_shared<std::vector<uint8_t>>();
 	m_dtb = std::make_shared<DTB>(m_textual, m_blob);
 
-	eeprom.read(0, 4096, *m_blob);
+	try {
+		eeprom.read(0, 4096, *m_blob);
+		m_dtb->decompile(sigc::mem_fun(*this,
+		    &EepromTab::decompile_done));
+	} catch (const std::runtime_error &err) {
+		Gtk::MessageDialog msg("Read error");
 
-	m_dtb->decompile(sigc::mem_fun(*this, &EepromTab::decompile_done));
+		msg.set_secondary_text(err.what());
+		msg.run();
+	}
 }
 
 
 void
 EepromTab::compile_done(bool ok, int size, const std::string &errors)
 {
-
 	if (ok) {
 		Gtk::MessageDialog dlg(*m_parent, fmt::format(
 		    "Compilation and flashing done (size: {} bytes)", size));
@@ -539,4 +560,9 @@ GpioTab::GpioTab(MainWindow *parent, const Device &dev):
 	pack_start(m_gpio1_row, false, true);
 	pack_start(m_gpio2_row, false, true);
 	pack_start(m_gpio3_row, false, true);
+}
+
+void
+GpioTab::button_clicked(Gtk::ToggleButton &button, int index)
+{
 }

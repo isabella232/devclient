@@ -33,6 +33,8 @@
 
 Gpio::Gpio(const Device &device)
 {
+	uint8_t value = 0;
+
 	m_context.set_interface(INTERFACE_D);
 
 	if (m_context.open(device.vid, device.pid, device.description,
@@ -47,6 +49,9 @@ Gpio::Gpio(const Device &device)
 
 	if (m_context.set_bitmode(0xff, BITMODE_BITBANG) != 0)
 		throw std::runtime_error("Failed to set bitmode");
+
+	if (m_context.write(&value, 1) != 1)
+		throw std::runtime_error("Failed to write bitmask");
 }
 
 Gpio::~Gpio()
