@@ -84,6 +84,7 @@ public:
 protected:
 	void start_clicked();
 	void stop_clicked();
+	void reset_clicked();
 	void bypass_clicked();
 	
 	void on_output_ready(const std::string &output);
@@ -149,10 +150,14 @@ public:
 	GpioTab(MainWindow *parent, const Device &dev);
 
 protected:
-	FormRow<Gtk::Button> m_gpio0_row;
-	FormRow<Gtk::Button> m_gpio1_row;
-	FormRow<Gtk::Button> m_gpio2_row;
-	FormRow<Gtk::Button> m_gpio3_row;
+	void button_clicked(Gtk::ToggleButton &button, int index);
+
+	FormRow<Gtk::ToggleButton> m_gpio0_row;
+	FormRow<Gtk::ToggleButton> m_gpio1_row;
+	FormRow<Gtk::ToggleButton> m_gpio2_row;
+	FormRow<Gtk::ToggleButton> m_gpio3_row;
+	std::shared_ptr<Gpio> m_gpio;
+	uint8_t state;
 	MainWindow *m_parent;
 	const Device &m_device;
 

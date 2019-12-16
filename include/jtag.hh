@@ -42,6 +42,7 @@ public:
 	void start();
 	void stop();
 	static void bypass(const Device &device);
+	static void reset(const Device &device);
 
 	sigc::signal<void, const std::string &> on_output_produced;
 	sigc::signal<void> on_server_start;
@@ -62,4 +63,4 @@ protected:
 	bool m_running;
 };
 
-#endif //DEVCLIENT_JTAG_HH
+#endif /* DEVCLIENT_JTAG_HH */

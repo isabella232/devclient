@@ -35,6 +35,7 @@
 #include <utils.hh>
 #include <filesystem.hh>
 
+#define RESET_MASK	0x20
 #define BUFFER_SIZE	1024
 
 JtagServer::JtagServer(const Device &device, Glib::RefPtr<Gio::InetAddress>,
@@ -64,7 +65,7 @@ JtagServer::start()
 		"-c", "tcl_port disabled",
 		"-c", "interface ftdi",
 		"-c", "transport select jtag",
-		"-c", "adapter_khz 8000",
+		"-c", "adapter_khz 1000",
 		"-c", "ftdi_channel 1",
 		"-c", "ftdi_layout_init 0x0008 0x000b",
 		"-c", "ftdi_layout_signal nTRST -data 0x10",
@@ -129,16 +130,13 @@ JtagServer::bypass(const Device &device)
 
 	context.set_interface(INTERFACE_B);
 
-	if (
-		context.open(device.vid, device.pid, device.description,
-			device.serial) != 0
-	){
+	if (context.open(device.vid, device.pid, device.description,
+	    device.serial) != 0) {
 		show_centered_dialog("Failed to open device.");
 		return;
 	}
 
-	if (context.set_bitmode(0xff, BITMODE_RESET) != 0)
-	{
+	if (context.set_bitmode(0xff, BITMODE_RESET) != 0) {
 		show_centered_dialog("Failed to set BITMODE_RESET.");
 		return;
 	}
@@ -150,9 +148,36 @@ JtagServer::bypass(const Device &device)
 	}
 
 	Logger::info("Bypass mode enabled.");
-	
 	show_centered_dialog("Bypass mode enabled.");
-	
+
+	context.close();
+}
+
+void
+JtagServer::reset(const Device &device)
+{
+	Ftdi::Context context;
+	uint8_t data = RESET_MASK;
+
+	context.set_interface(INTERFACE_B);
+
+	if (context.open(device.vid, device.pid, device.description,
+	    device.serial) != 0)
+		throw std::runtime_error("Failed to open device");
+
+	if (context.set_bitmode(0xff, BITMODE_RESET) != 0)
+		throw std::runtime_error("Failed to set bitmode");
+
+	if (context.set_bitmode(0x20, BITMODE_BITBANG) != 0)
+		throw std::runtime_error("Failed to set bitmode");
+
+	if (context.write(&data, sizeof(data)) != sizeof(data))
+		throw std::runtime_error("Failed to write reset mask");
+
+	if (context.set_bitmode(0, BITMODE_BITBANG) != 0)
+		throw std::runtime_error("Failed to set bitmode");
+
+	Logger::info("Reset done");
 	context.close();
 }
 

@@ -63,10 +63,14 @@ void DTB::run_dtc(bool compile, const SlotDone &done)
 		"-O", compile ? "dtb" : "dts"
 	};
 
-	Glib::spawn_async_with_pipes("/tmp", argv,
-	    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
-	    Glib::SlotSpawnChildSetup(),
-	    &pid, &stdin_fd, &stdout_fd, &stderr_fd);
+	try {
+		Glib::spawn_async_with_pipes("/tmp", argv,
+		    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
+		    Glib::SlotSpawnChildSetup(),
+		    &pid, &stdin_fd, &stdout_fd, &stderr_fd);
+	} catch (const Glib::Error &err) {
+		throw std::runtime_error(err.what());
+	}
 
 	m_in = Gio::UnixOutputStream::create(stdin_fd, true);
 	m_out = Gio::UnixInputStream::create(stdout_fd, true);

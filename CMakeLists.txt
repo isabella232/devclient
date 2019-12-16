@@ -64,9 +64,13 @@ execute_process(
 file(COPY scripts DESTINATION ${CMAKE_BINARY_DIR})
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tools)
 
-add_custom_target(openocd ALL
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/openocd/config.log
         COMMAND ./bootstrap nosubmodule
         COMMAND ./configure --enable-target64 --enable-libftdi --prefix=""
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
+
+add_custom_target(openocd ALL
+        DEPENDS ${CMAKE_BINARY_DIR}/openocd/config.log
         COMMAND make
         COMMAND make install DESTDIR=${CMAKE_BINARY_DIR}/tools
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
