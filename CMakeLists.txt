@@ -13,19 +13,22 @@ add_subdirectory(contrib/filesystem-1.2.10)
 
 find_package(PkgConfig)
 find_package(Boost)
-find_package(libftdi)
 
 pkg_check_modules(GTKMM gtkmm-3.0)
 pkg_check_modules(GIOMM giomm-2.4)
 pkg_check_modules(LIBFTDI libftdipp1)
 
 link_directories(${GTKMM_LIBRARY_DIRS})
+link_directories(${LIBFTDI_LIBRARY_DIRS})
 include_directories(${GIOMM_INCLUDE_DIRS})
 include_directories(${GTKMM_INCLUDE_DIRS})
 include_directories(${LIBFTDI_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/contrib/filesystem-1.2.10/include)
 include_directories(include)
+
+message("libftdi debug LIBFTDI_INCLUDE_DIRS: ${LIBFTDI_INCLUDE_DIRS}")
+message("libftdi debug LIBFTDI_LIBRARIES: ${LIBFTDI_LIBRARIES}")
 
 add_executable(devclient
         src/utils.cc
@@ -87,6 +90,7 @@ target_link_libraries(devclient
         ${Boost_LIBRARIES}
         fmt)
 target_link_libraries(devclient pthread)
+target_link_libraries(devclient ftdipp1)
 
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_link_libraries(devclient stdc++fs)
