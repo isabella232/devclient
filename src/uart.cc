@@ -46,6 +46,11 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 		show_centered_dialog("Failed to open device.");
 		return;
 	}
+
+	if (m_context.reset() != 0) {
+		show_centered_dialog("Failed to reset UART channel");
+		return;
+	}
 	
 	if (m_context.set_bitmode(0xff, BITMODE_RESET) != 0) {
 		show_centered_dialog("Failed to reset bitmode.");
