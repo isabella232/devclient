@@ -162,7 +162,7 @@ void
 JtagServer::reset(const Device &device)
 {
 	Ftdi::Context context;
-	uint8_t data = RESET_MASK;
+	uint8_t data[] = { RESET_MASK, 0x00, RESET_MASK };
 
 	context.set_interface(INTERFACE_B);
 
@@ -177,7 +177,7 @@ JtagServer::reset(const Device &device)
 		return;
 	}
 
-	if (context.set_bitmode(0xff, BITMODE_RESET) != 0) {
+	if (context.set_bitmode(0x0, BITMODE_RESET) != 0) {
 		show_centered_dialog("Failed to set bitmode");
 		return;
 	}
@@ -187,7 +187,7 @@ JtagServer::reset(const Device &device)
 		return;
 	}
 
-	if (context.write(&data, sizeof(data)) != sizeof(data)) {
+	if (context.write(data, sizeof(data)) != sizeof(data)) {
 		show_centered_dialog("Failed to write reset mask");
 		return;
 	}
