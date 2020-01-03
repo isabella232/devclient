@@ -267,21 +267,21 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
 
 	m_address_row.get_widget().set_text("127.0.0.1");
 	m_addr_changed_conn = m_address_row
-		.get_widget()
-		.signal_changed()
-		.connect(sigc::mem_fun(*this, &JtagTab::on_address_changed));
+	    .get_widget()
+	    .signal_changed()
+	    .connect(sigc::mem_fun(*this, &JtagTab::on_address_changed));
 	
 	m_ocd_port_row.get_widget().set_text("4444");
 	m_ocd_port_changed_conn = m_ocd_port_row
-		.get_widget()
-		.signal_changed()
-		.connect(sigc::mem_fun(*this, &JtagTab::on_ocd_port_changed));
+	    .get_widget()
+	    .signal_changed()
+	    .connect(sigc::mem_fun(*this, &JtagTab::on_ocd_port_changed));
 	
 	m_gdb_port_row.get_widget().set_text("3333");
 	m_gdb_port_changed_conn = m_gdb_port_row
-		.get_widget()
-		.signal_changed()
-		.connect(sigc::mem_fun(*this, &JtagTab::on_gdb_port_changed));
+	    .get_widget()
+	    .signal_changed()
+	    .connect(sigc::mem_fun(*this, &JtagTab::on_gdb_port_changed));
 	
 	m_status_row.get_widget().set_text("Ready");
 
@@ -331,18 +331,16 @@ JtagTab::start_clicked()
 	    m_board_row.get_widget().get_filename());
 	
 	m_server->on_output_produced.connect(
-		sigc::mem_fun(*this, &JtagTab::on_output_ready));
+	    sigc::mem_fun(*this, &JtagTab::on_output_ready));
 	m_server->on_server_start.connect(
-		sigc::mem_fun(*this, &JtagTab::on_server_start));
+	    sigc::mem_fun(*this, &JtagTab::on_server_start));
 	m_server->on_server_exit.connect(
-		sigc::mem_fun(*this, &JtagTab::on_server_exit));
+	    sigc::mem_fun(*this, &JtagTab::on_server_exit));
 
 	try
 	{
 		m_server->start();
-	}
-	catch (const std::runtime_error &err)
-	{
+	} catch (const std::runtime_error &err) {
 		show_centered_dialog(
 			"Failed to start JTAG server.", err.what());
 	}
@@ -409,8 +407,12 @@ void JtagTab::on_address_changed()
 void JtagTab::on_ocd_port_changed()
 {
 	Glib::ustring output;
-	for (const unsigned int &c : m_ocd_port_row.get_widget().get_text())
-		if (isdigit((char)c)) output += c;
+
+	for (const unsigned int &c: m_ocd_port_row.get_widget().get_text()) {
+		if (isdigit((char) c))
+			output += c;
+	}
+
 	m_ocd_port_changed_conn.block();
 	m_ocd_port_row.get_widget().set_text(output);
 	m_ocd_port_changed_conn.unblock();
@@ -419,8 +421,11 @@ void JtagTab::on_ocd_port_changed()
 void JtagTab::on_gdb_port_changed()
 {
 	Glib::ustring output;
-	for (const unsigned int &c : m_gdb_port_row.get_widget().get_text())
-		if (isdigit((char)c)) output += c;
+
+	for (const unsigned int &c: m_gdb_port_row.get_widget().get_text()) {
+		if (isdigit((char)c))
+			output += c;
+	}
 	m_gdb_port_changed_conn.block();
 	m_gdb_port_row.get_widget().set_text(output);
 	m_gdb_port_changed_conn.unblock();
