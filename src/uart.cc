@@ -134,8 +134,6 @@ Uart::usb_worker()
 
 	for (;;) {
 		ret = m_context.read(buffer, sizeof(buffer));
-		Logger::debug("ret = {}", ret);
-		
 		if (ret < 0 || !m_running)
 			break;
 
