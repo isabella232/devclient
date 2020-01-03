@@ -136,6 +136,11 @@ JtagServer::bypass(const Device &device)
 		return;
 	}
 
+	if (context.reset() != 0) {
+		show_centered_dialog("Failed to reset channel");
+		return;
+	}
+
 	if (context.set_bitmode(0xff, BITMODE_RESET) != 0) {
 		show_centered_dialog("Failed to set BITMODE_RESET.");
 		return;
@@ -162,21 +167,35 @@ JtagServer::reset(const Device &device)
 	context.set_interface(INTERFACE_B);
 
 	if (context.open(device.vid, device.pid, device.description,
-	    device.serial) != 0)
-		throw std::runtime_error("Failed to open device");
+	    device.serial) != 0) {
+		show_centered_dialog("Failed to open device");
+		return;
+	}
 
-	if (context.set_bitmode(0xff, BITMODE_RESET) != 0)
-		throw std::runtime_error("Failed to set bitmode");
+	if (context.reset() != 0) {
+		show_centered_dialog("Failed to reset channel");
+		return;
+	}
 
-	if (context.set_bitmode(0x20, BITMODE_BITBANG) != 0)
-		throw std::runtime_error("Failed to set bitmode");
+	if (context.set_bitmode(0xff, BITMODE_RESET) != 0) {
+		show_centered_dialog("Failed to set bitmode");
+		return;
+	}
 
-	if (context.write(&data, sizeof(data)) != sizeof(data))
-		throw std::runtime_error("Failed to write reset mask");
+	if (context.set_bitmode(0x20, BITMODE_BITBANG) != 0) {
+		show_centered_dialog("Failed to set bitmode");
+		return;
+	}
 
-	if (context.set_bitmode(0, BITMODE_BITBANG) != 0)
-		throw std::runtime_error("Failed to set bitmode");
+	if (context.write(&data, sizeof(data)) != sizeof(data)) {
+		show_centered_dialog("Failed to write reset mask");
+		return;
+	}
 
+	if (context.set_bitmode(0, BITMODE_BITBANG) != 0) {
+		show_centered_dialog("Failed to set bitmode");
+		return;
+	}
 	Logger::info("Reset done");
 	context.close();
 }

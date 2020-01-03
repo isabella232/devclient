@@ -39,6 +39,7 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 {
 	Glib::RefPtr<Gio::SocketAddress> retaddr;
 
+	m_running = false;
 	m_context.set_interface(INTERFACE_C);
 
 	if (m_context.open(device.vid, device.pid, device.description,
@@ -67,12 +68,16 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 		return;
 	}
 
-	m_socket_service = Gio::ThreadedSocketService::create(10);
-	m_socket_service->add_address(
-	    addr,
-	    Gio::SocketType::SOCKET_TYPE_STREAM,
-	    Gio::SocketProtocol::SOCKET_PROTOCOL_TCP,
-	    retaddr);
+	try {
+		m_socket_service = Gio::ThreadedSocketService::create(10);
+		m_socket_service->add_address(
+		    addr,
+		    Gio::SocketType::SOCKET_TYPE_STREAM,
+		    Gio::SocketProtocol::SOCKET_PROTOCOL_TCP,
+		    retaddr);
+	} catch (const Glib::Exception &err) {
+		throw std::runtime_error(err.what());
+	}
 
 	m_socket_service->signal_run().connect(sigc::mem_fun(*this,
 	    &Uart::socket_worker));
@@ -91,8 +96,13 @@ Uart::start()
 	if (m_running)
 		return;
 
-	m_socket_service->start();
-	m_usb_worker = std::thread(&Uart::usb_worker, this);
+	try {
+		m_socket_service->start();
+		m_usb_worker = std::thread(&Uart::usb_worker, this);
+	} catch (const std::exception &err) {
+		throw std::runtime_error(err.what());
+	}
+
 	m_running = true;
 	Logger::debug("UART: started");
 }
@@ -102,6 +112,9 @@ Uart::stop()
 {
 	if (!m_running)
 		return;
+
+	for (auto &i: m_connections)
+		i.m_cancel->cancel();
 
 	m_running = false;
 	m_socket_service->stop();
@@ -115,10 +128,13 @@ void
 Uart::usb_worker()
 {
 	uint8_t buffer[BUFSIZE];
-	size_t ret;
+	int ret;
+
+	Logger::debug("UART: USB thread started");
 
 	for (;;) {
 		ret = m_context.read(buffer, sizeof(buffer));
+		Logger::debug("ret = {}", ret);
 		
 		if (ret < 0 || !m_running)
 			break;
@@ -126,31 +142,31 @@ Uart::usb_worker()
 		if (ret == 0)
 			continue;
 
-		if (ret > 0)
-			Logger::debug("read {} bytes from USB", ret);
+		Logger::debug("read {} bytes from USB", ret);
 
 		for (auto &i: m_connections) {
 			try {
-				i->get_output_stream()->write(buffer, ret);
+				i.m_ostream->write(buffer, ret);
 			} catch (const Gio::Error &err) {
 				Logger::warning(
 				    "UART: error sending data to {}: {}",
-				    i->get_remote_address()->to_string(),
+				    i.m_conn->get_remote_address()->to_string(),
 				    err.what());
 				remove_connection(i);
 				continue;
 			}
 		}
 	}
+
+	Logger::debug("UART: USB thread stopped");
 }
 
 bool
-Uart::socket_worker(
-	const Glib::RefPtr<Gio::SocketConnection> &conn,
-    	const Glib::RefPtr<Glib::Object> &source
-){
+Uart::socket_worker(const Glib::RefPtr<Gio::SocketConnection> &conn,
+    const Glib::RefPtr<Glib::Object> &source)
+{
+	UartConnection uartconn;
 	Glib::RefPtr<Gio::InputStream> istream;
-	Glib::RefPtr<Gio::OutputStream> ostream;
 	uint8_t buffer[BUFSIZE];
 	ssize_t ret;
 	int written;
@@ -158,18 +174,23 @@ Uart::socket_worker(
 	Logger::info("UART: accepted connection from {}",
 	    conn->get_remote_address()->to_string());
 
+	uartconn.m_address = conn->get_remote_address();
+	uartconn.m_cancel = Gio::Cancellable::create();
+	uartconn.m_conn = conn;
+	uartconn.m_ostream = conn->get_output_stream();
+
 	istream = conn->get_input_stream();
-	ostream = conn->get_output_stream();
-	m_connections.push_back(conn);
-	m_connected.emit(conn->get_remote_address());
+	m_connections.push_back(uartconn);
+	m_connected.emit(uartconn.m_address);
 
 	/* Disable local echo */
-	ostream->write("\xFF\xFB\x01\xFF\xFB\x03");
+	uartconn.m_ostream->write("\xFF\xFB\x01\xFF\xFB\x03");
 
 	for (;;) {
 		try {
-			ret = istream->read(buffer, sizeof(buffer));
-			if (ret == 0)
+			ret = istream->read(buffer, sizeof(buffer),
+			    uartconn.m_cancel);
+			if (ret <= 0)
 				break;
 		} catch (const Gio::Error &err) {
 			Logger::warning("UART: I/O error: {}", err.what());
@@ -193,17 +214,18 @@ Uart::socket_worker(
 	Logger::info("UART: connection from {} ended",
 	    conn->get_remote_address()->to_string());
 
-	remove_connection(conn);
+	remove_connection(uartconn);
 	return (false);
 }
 
 void
-Uart::remove_connection(const Glib::RefPtr<Gio::SocketConnection> &conn)
+Uart::remove_connection(const UartConnection &conn)
 {
-	auto it = std::find(m_connections.begin(), m_connections.end(), conn);
+	auto it = std::find(m_connections.begin(),
+	    m_connections.end(), conn);
 
 	if (it != m_connections.end()) {
-		m_disconnected.emit(conn->get_remote_address());
+		m_disconnected.emit(conn.m_conn->get_remote_address());
 		m_connections.erase(it);
 	}
 }

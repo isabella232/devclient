@@ -181,7 +181,7 @@ protected:
 	Device m_device;
 	
 	void show_deviceselect_dialog();
-	void configure_devices(Device device);
+	void configure_devices(const Device &device);
 };
 
 #endif /* DEVCLIENT_MAINWINDOW_HH */

@@ -61,7 +61,8 @@ MainWindow::MainWindow():
 
 MainWindow::~MainWindow() {}
 
-void MainWindow::show_deviceselect_dialog()
+void
+MainWindow::show_deviceselect_dialog()
 {
 	DeviceSelectDialog dialog;
 	dialog.set_position(Gtk::WIN_POS_CENTER_ALWAYS);
@@ -70,12 +71,20 @@ void MainWindow::show_deviceselect_dialog()
 		configure_devices(dialog.get_selected_device().value());
 }
 
-void MainWindow::configure_devices(Device device)
+void
+MainWindow::configure_devices(const Device &device)
 {
+	set_title(fmt::format("{0} {1}", device.description, device.serial));
 	m_device = device;
-	m_i2c = new I2C(m_device, 100000);
-	m_gpio = new Gpio(m_device);
-	m_gpio->set(0);
+
+	try {
+		m_i2c = new I2C(m_device, 100000);
+		m_gpio = new Gpio(m_device);
+		m_gpio->set(0);
+	} catch (const std::runtime_error &err) {
+		show_centered_dialog("Error", err.what());
+		exit(1);
+	}
 }
 
 SerialTab::SerialTab(MainWindow *parent, const Device &dev):
@@ -154,13 +163,17 @@ SerialTab::start_clicked()
 	    Gio::InetAddress::create(m_address_row.get_widget().get_text()),
 	    std::stoi(m_port_row.get_widget().get_text()));
 
-	m_uart = std::make_shared<Uart>(m_device, addr, baud);
-	m_uart->m_connected.connect(sigc::mem_fun(*this,
-	    &SerialTab::client_connected));
-	m_uart->m_disconnected.connect(sigc::mem_fun(*this,
-	    &SerialTab::client_disconnected));
-	m_uart->start();
-	m_status_row.get_widget().set_text("Running");
+	try {
+		m_uart = std::make_shared<Uart>(m_device, addr, baud);
+		m_uart->m_connected.connect(sigc::mem_fun(*this,
+		    &SerialTab::client_connected));
+		m_uart->m_disconnected.connect(sigc::mem_fun(*this,
+		    &SerialTab::client_disconnected));
+		m_uart->start();
+		m_status_row.get_widget().set_text("Running");
+	} catch (const std::runtime_error &err) {
+		show_centered_dialog("Error", err.what());
+	}
 }
 
 void
@@ -283,7 +296,7 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
 	    .signal_changed()
 	    .connect(sigc::mem_fun(*this, &JtagTab::on_gdb_port_changed));
 	
-	m_status_row.get_widget().set_text("Ready");
+	m_status_row.get_widget().set_text("Stopped");
 
 	m_textbuffer = Gtk::TextBuffer::create();
 	m_textview.set_editable(false);
@@ -337,12 +350,11 @@ JtagTab::start_clicked()
 	m_server->on_server_exit.connect(
 	    sigc::mem_fun(*this, &JtagTab::on_server_exit));
 
-	try
-	{
+	try {
 		m_server->start();
 	} catch (const std::runtime_error &err) {
-		show_centered_dialog(
-			"Failed to start JTAG server.", err.what());
+		show_centered_dialog("Failed to start JTAG server.",
+		    err.what());
 	}
 }
 
@@ -397,8 +409,12 @@ JtagTab::on_server_exit()
 void JtagTab::on_address_changed()
 {
 	Glib::ustring output;
-	for (const unsigned int &c : m_address_row.get_widget().get_text())
-		if (isdigit((char)c) || c == 0x2E) output += c;
+
+	for (const unsigned int &c: m_address_row.get_widget().get_text()) {
+		if (isdigit((char) c) || c == 0x2E)
+			output += c;
+	}
+
 	m_addr_changed_conn.block();
 	m_address_row.get_widget().set_text(output);
 	m_addr_changed_conn.unblock();

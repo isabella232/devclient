@@ -38,6 +38,20 @@
 #include <ftdi.hpp>
 #include <device.hh>
 
+class UartConnection
+{
+public:
+	Glib::RefPtr<Gio::SocketAddress> m_address;
+	Glib::RefPtr<Gio::SocketConnection> m_conn;
+	Glib::RefPtr<Gio::OutputStream> m_ostream;
+	Glib::RefPtr<Gio::Cancellable> m_cancel;
+
+	inline bool operator==(const UartConnection &other)
+	{
+		return (m_address.get() == other.m_address.get());
+	}
+};
+
 class Uart
 {
 public:
@@ -51,7 +65,7 @@ public:
 	sigc::signal<void, Glib::RefPtr<Gio::SocketAddress>> m_disconnected;
 
 protected:
-	void remove_connection(const Glib::RefPtr<Gio::SocketConnection> &conn);
+	void remove_connection(const UartConnection &conn);
 	void usb_worker();
 	bool socket_worker(
 	    const Glib::RefPtr<Gio::SocketConnection> &conn,
@@ -59,7 +73,7 @@ protected:
 
 	Ftdi::Context m_context;
 	Glib::RefPtr<Gio::ThreadedSocketService> m_socket_service;
-	std::vector<Glib::RefPtr<Gio::SocketConnection>> m_connections;
+	std::vector<UartConnection> m_connections;
 	std::thread m_usb_worker;
 	bool m_running;
 };
