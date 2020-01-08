@@ -56,7 +56,7 @@ class Uart
 {
 public:
 	Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
-		int baudrate);
+	    int baudrate);
 	virtual ~Uart();
 	void start();
 	void stop();
@@ -75,6 +75,7 @@ protected:
 	Glib::RefPtr<Gio::ThreadedSocketService> m_socket_service;
 	std::vector<UartConnection> m_connections;
 	std::thread m_usb_worker;
+	Device m_device;
 	bool m_running;
 };
 

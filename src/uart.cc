@@ -41,6 +41,7 @@ Uart::Uart(const Device &device, const Glib::RefPtr<Gio::SocketAddress> &addr,
 
 	m_running = false;
 	m_context.set_interface(INTERFACE_C);
+	m_device = device;
 
 	if (m_context.open(device.vid, device.pid, device.description,
 	    device.serial) != 0) {
@@ -173,6 +174,7 @@ Uart::socket_worker(const Glib::RefPtr<Gio::SocketConnection> &conn,
 	    conn->get_remote_address()->to_string());
 
 	uartconn.m_address = conn->get_remote_address();
+	uartconn.m_address->reference();
 	uartconn.m_cancel = Gio::Cancellable::create();
 	uartconn.m_conn = conn;
 	uartconn.m_ostream = conn->get_output_stream();
@@ -183,6 +185,8 @@ Uart::socket_worker(const Glib::RefPtr<Gio::SocketConnection> &conn,
 
 	/* Disable local echo */
 	uartconn.m_ostream->write("\xFF\xFB\x01\xFF\xFB\x03");
+	uartconn.m_ostream->write(fmt::format("==> Connected to {} {} <==\r\n",
+	    m_device.description, m_device.serial));
 
 	for (;;) {
 		try {
@@ -203,11 +207,9 @@ Uart::socket_worker(const Glib::RefPtr<Gio::SocketConnection> &conn,
 			    ret, written);
 		}
 	}
-
-	m_disconnected.emit(uartconn.m_address);
 	
 	Logger::info("UART: connection from {} ended",
-	    conn->get_remote_address()->to_string());
+	    uartconn.m_address->to_string());
 
 	remove_connection(uartconn);
 	return (false);
