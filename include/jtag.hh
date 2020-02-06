@@ -54,6 +54,7 @@ protected:
 	    Glib::RefPtr<Gio::UnixInputStream> stream);
 
 	const Device &m_device;
+	Glib::RefPtr<Gio::InetAddress> m_address;
 	uint16_t m_ocd_port;
 	uint16_t m_gdb_port;
 	std::string m_board_script;

@@ -38,8 +38,10 @@
 #define RESET_MASK	0x20
 #define BUFFER_SIZE	1024
 
-JtagServer::JtagServer(const Device &device, Glib::RefPtr<Gio::InetAddress>,
-    uint16_t gdb_port, uint16_t ocd_port, const std::string &board_script):
+JtagServer::JtagServer(const Device &device,
+    Glib::RefPtr<Gio::InetAddress> address, uint16_t gdb_port,
+    uint16_t ocd_port, const std::string &board_script):
+    m_address(address),
     m_device(device),
     m_ocd_port(ocd_port),
     m_gdb_port(gdb_port),
@@ -60,6 +62,7 @@ JtagServer::start()
 	int stderr_fd;
 	std::vector<std::string> argv {
 		executable_dir() + "/tools/bin/openocd",
+		"-c", fmt::format("bindto {}", m_address->to_string()),
 		"-c", fmt::format("gdb_port {}", m_gdb_port),
 		"-c", fmt::format("telnet_port {}", m_ocd_port),
 		"-c", "tcl_port disabled",
@@ -143,13 +146,13 @@ JtagServer::bypass(const Device &device)
 	}
 
 	if (context.set_bitmode(0xff, BITMODE_RESET) != 0) {
-		show_centered_dialog("Failed to set BITMODE_RESET.");
+		show_centered_dialog("Failed to set BITMODE_RESET");
 		return;
 	}
 
 	if (context.set_bitmode(0, BITMODE_BITBANG) != 0)
 	{
-		show_centered_dialog("Failed to set BITMODE_BITBANG.");
+		show_centered_dialog("Failed to set BITMODE_BITBANG");
 		return;
 	}
 
