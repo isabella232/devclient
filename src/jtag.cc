@@ -34,6 +34,9 @@
 #include <jtag.hh>
 #include <utils.hh>
 #include <filesystem.hh>
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 
 #define RESET_MASK	0x20
 #define BUFFER_SIZE	1024
@@ -68,12 +71,11 @@ JtagServer::start()
 		"-c", "tcl_port disabled",
 		"-c", "interface ftdi",
 		"-c", "transport select jtag",
-		"-c", "adapter_khz 8000",
+		"-c", "adapter speed 8000",
 		"-c", "ftdi_channel 1",
 		"-c", "ftdi_layout_init 0x0008 0x000b",
 		"-c", "ftdi_layout_signal nTRST -data 0x10",
 		"-c", "ftdi_layout_signal nSRST -oe 0x20 -data 0x20",
-		"-c", "adapter_nsrst_delay 500",
 		"-c", fmt::format("ftdi_serial \"{}\"", m_device.serial),
 		"-c", fmt::format("ftdi_vid_pid {:#04x} {:#04x}",
 		    m_device.vid, m_device.pid),
@@ -86,11 +88,11 @@ JtagServer::start()
 	try {
 		Glib::spawn_async_with_pipes("/tmp", argv,
 		    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
-		    Glib::SlotSpawnChildSetup(), &m_pid, nullptr,
-		    &stdout_fd, &stderr_fd);
+		    sigc::mem_fun(*this, &JtagServer::prepare_child), &m_pid,
+		    nullptr, &stdout_fd, &stderr_fd);
 	} catch (const Glib::Error &err) {
 		show_centered_dialog(
-			"Failed to start JTAG server.", err.what());
+		    "Failed to start JTAG server.", err.what());
 		return;
 	}
 	
@@ -126,6 +128,7 @@ JtagServer::stop()
 	while (m_running)
 		Gtk::Main::iteration();
 }
+
 
 void
 JtagServer::bypass(const Device &device)
@@ -202,6 +205,14 @@ JtagServer::reset(const Device &device)
 	}
 	Logger::info("Reset done");
 	context.close();
+}
+
+void
+JtagServer::prepare_child()
+{
+#if defined(__linux__)
+	prctl(PR_SET_PDEATHSIG, SIGTERM);
+#endif
 }
 
 void

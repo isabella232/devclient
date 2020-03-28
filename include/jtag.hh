@@ -49,6 +49,7 @@ public:
 	sigc::signal<void> on_server_exit;
 
 protected:
+	void prepare_child();
 	void child_exited(Glib::Pid pid, int code);
 	void output_ready(Glib::RefPtr<Gio::AsyncResult> &result,
 	    Glib::RefPtr<Gio::UnixInputStream> stream);

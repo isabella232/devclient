@@ -12,7 +12,8 @@ swj_newdap $CHIPNAME cpu -irlen 4 -ircapture 0x1 -irmask 0xf -expected-id $CPUTA
 dap create $CHIPNAME.dap -chain-position $CHIPNAME.cpu
 target create $TARGETNAME cortex_a -dap $CHIPNAME.dap -endian $ENDIAN -coreid 0 -dbgbase $DBGBASE
 
-adapter_nsrst_delay 500
-jtag_ntrst_delay 500
+adapter srst pulse_width 200
+adapter srst delay 1000
+jtag_ntrst_delay 1000
 
 $TARGETNAME configure -work-area-virt 0 -work-area-phys 0x00200000 -work-area-size 0x20000 -work-area-backup 1

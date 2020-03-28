@@ -3,8 +3,7 @@ project(devclient)
 set(CMAKE_CXX_STANDARD 17)
 
 set(OPENOCD_URL https://github.com/conclusiveeng/openocd.git)
-
-set(OPENOCD_VER samthedongle)
+set(OPENOCD_VER master)
 
 add_subdirectory(contrib/fmt-6.0.0)
 add_subdirectory(contrib/filesystem-1.2.10)
@@ -46,7 +45,7 @@ execute_process(
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 execute_process(
-        COMMAND git pull
+        COMMAND git pull origin ${OPENOCD_VER}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
 
 file(COPY scripts DESTINATION ${CMAKE_BINARY_DIR})
@@ -59,7 +58,7 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/openocd/config.log
 
 add_custom_target(openocd ALL
         DEPENDS ${CMAKE_BINARY_DIR}/openocd/config.log
-        COMMAND make
+        COMMAND make -j4
         COMMAND make install DESTDIR=${CMAKE_BINARY_DIR}/tools
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
 
