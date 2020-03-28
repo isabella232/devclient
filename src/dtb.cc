@@ -58,14 +58,15 @@ void DTB::run_dtc(bool compile, const SlotDone &done)
 
 	std::string errors;
 	std::vector<std::string> argv {
-		executable_dir() + "/tools/bin/dtc",
+		"dtc",
 		"-I", compile ? "dts" : "dtb",
 		"-O", compile ? "dtb" : "dts"
 	};
 
 	try {
 		Glib::spawn_async_with_pipes("/tmp", argv,
-		    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
+		    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD |
+		    Glib::SpawnFlags::SPAWN_SEARCH_PATH,
 		    Glib::SlotSpawnChildSetup(),
 		    &pid, &stdin_fd, &stdout_fd, &stderr_fd);
 	} catch (const Glib::Error &err) {

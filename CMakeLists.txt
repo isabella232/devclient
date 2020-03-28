@@ -3,10 +3,8 @@ project(devclient)
 set(CMAKE_CXX_STANDARD 17)
 
 set(OPENOCD_URL https://github.com/conclusiveeng/openocd.git)
-set(DTC_URL git://git.kernel.org/pub/scm/utils/dtc/dtc.git)
 
 set(OPENOCD_VER samthedongle)
-set(DTC_VER v1.5.1)
 
 add_subdirectory(contrib/fmt-6.0.0)
 add_subdirectory(contrib/filesystem-1.2.10)
@@ -51,16 +49,6 @@ execute_process(
         COMMAND git pull
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
 
-message("-- Cloning DTC")
-
-execute_process(
-        COMMAND git clone --recursive ${DTC_URL} -b ${DTC_VER}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-
-execute_process(
-        COMMAND git pull
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/dtc)
-
 file(COPY scripts DESTINATION ${CMAKE_BINARY_DIR})
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tools)
 
@@ -74,11 +62,6 @@ add_custom_target(openocd ALL
         COMMAND make
         COMMAND make install DESTDIR=${CMAKE_BINARY_DIR}/tools
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/openocd)
-
-add_custom_target(dtc ALL
-        COMMAND make
-        COMMAND make install PREFIX=/usr/local DESTDIR=${CMAKE_BINARY_DIR}/tools NO_PYTHON=1
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/dtc)
 
 target_link_libraries(devclient
         ${GIOMM_LIBRARIES}
