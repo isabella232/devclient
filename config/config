@@ -1,0 +1,18 @@
+
+device {
+	serial=006/2019
+
+	uart {
+		baudrate=115200
+		listen_ip=0.0.0.0
+		listen_port=2222
+	}
+
+	jtag {
+		listen_ip=0.0.0.0
+		gdb_port = 3333
+		telnet_port = 4444
+		script = /tmp/scripts/samthedongle-v2.tcl
+		pass_through=0
+	}
+}

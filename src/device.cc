@@ -29,6 +29,7 @@
 #include <optional>
 #include <ftdi.hpp>
 #include <device.hh>
+#include <fmt/format.h>
 
 #define USB_VID		0x0403
 #define USB_PID		0x6011

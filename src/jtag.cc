@@ -25,7 +25,7 @@
  * SUCH DAMAGE.
  *
  */
- 
+
 #include <vector>
 #include <giomm.h>
 #include <gtkmm.h>
@@ -84,7 +84,7 @@ JtagServer::start()
 
 	if (m_running)
 		return;
-	
+
 	try {
 		Glib::spawn_async_with_pipes("/tmp", argv,
 		    Glib::SpawnFlags::SPAWN_DO_NOT_REAP_CHILD,
@@ -95,11 +95,11 @@ JtagServer::start()
 		    "Failed to start JTAG server.", err.what());
 		return;
 	}
-	
+
 	Glib::signal_child_watch().connect(
 	    sigc::mem_fun(*this, &JtagServer::child_exited),
 	    m_pid);
-	
+
 	m_out = Gio::UnixInputStream::create(stdout_fd, true);
 	m_err = Gio::UnixInputStream::create(stderr_fd, true);
 
@@ -110,9 +110,9 @@ JtagServer::start()
 	    *this, &JtagServer::output_ready), m_err));
 
 	setpgid(m_pid, getpid());
-	
+
 	m_running = true;
-	
+
 	on_server_start.emit();
 }
 
