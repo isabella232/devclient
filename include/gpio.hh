@@ -31,6 +31,7 @@
 
 #include <ftdi.hpp>
 #include <device.hh>
+#include <gtkmm.h>
 
 class Gpio
 {
@@ -40,9 +41,14 @@ public:
 
 	uint8_t get();
 	void set(uint8_t mask);
+	void configure();
+	uint8_t io_state;		/* 0-input, 1-output */
+	uint8_t io_value;		/* 0-low, 1-high */
+	Ftdi::Context m_context;
 
 protected:
-	Ftdi::Context m_context;
+	bool on_timeout(int costam);
+	int reference;
 };
 
 #endif //DEVCLIENT_GPIO_HH

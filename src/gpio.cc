@@ -30,10 +30,14 @@
 #include <ftdi.hpp>
 #include <device.hh>
 #include <gpio.hh>
+#include <gtkmm.h>
 
 Gpio::Gpio(const Device &device)
 {
 	uint8_t value = 0;
+
+	/* set all the GPIO to input - clear all the bits */
+	io_state = 0x00;
 
 	m_context.set_interface(INTERFACE_D);
 
@@ -44,14 +48,7 @@ Gpio::Gpio(const Device &device)
 		    m_context.error_string()));
 	}
 
-	if (m_context.set_bitmode(0xff, BITMODE_RESET) != 0)
-		throw std::runtime_error("Failed to set bitmode");
-
-	if (m_context.set_bitmode(0xff, BITMODE_BITBANG) != 0)
-		throw std::runtime_error("Failed to set bitmode");
-
-	if (m_context.write(&value, 1) != 1)
-		throw std::runtime_error("Failed to write bitmask");
+	configure();
 }
 
 Gpio::~Gpio()
@@ -73,3 +70,15 @@ Gpio::set(uint8_t mask)
 {
 	m_context.write(&mask, 1);
 }
+
+
+void
+Gpio::configure()
+{
+	if (m_context.set_bitmode(0xff, BITMODE_RESET) != 0)
+		throw std::runtime_error("Failed to set bitmode");
+
+	if (m_context.set_bitmode(io_state, BITMODE_BITBANG) != 0)
+		throw std::runtime_error("Failed to set bitmode");
+}
+

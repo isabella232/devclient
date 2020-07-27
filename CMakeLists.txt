@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.5)
 project(devclient)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "-Wall -ggdb3")
+
 
 set(OPENOCD_URL https://github.com/conclusiveeng/openocd.git)
 set(OPENOCD_VER master)

@@ -57,6 +57,8 @@ MainWindow::MainWindow():
 	show_all_children();
 	
 	show_deviceselect_dialog();
+	
+	m_gpio_tab.m_gpio = (std::shared_ptr<Gpio>) m_gpio;
 }
 
 MainWindow::~MainWindow() {}
@@ -80,6 +82,7 @@ MainWindow::configure_devices(const Device &device)
 	try {
 		m_i2c = new I2C(m_device, 100000);
 		m_gpio = new Gpio(m_device);
+		printf("m_gpio: %#lx\n", m_gpio);
 		m_gpio->set(0);
 	} catch (const std::runtime_error &err) {
 		show_centered_dialog("Error", err.what());
@@ -577,13 +580,175 @@ GpioTab::GpioTab(MainWindow *parent, const Device &dev):
 	m_gpio2_row.get_widget().set_label("off");
 	m_gpio3_row.get_widget().set_label("off");
 
+	/* connect signal to raido buttons */
+	m_gpio0_row.m_radio_in.signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::radio_clicked));
+	m_gpio1_row.m_radio_in.signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::radio_clicked));
+	m_gpio2_row.m_radio_in.signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::radio_clicked));
+	m_gpio3_row.m_radio_in.signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::radio_clicked));
+
+	/* connect signal to on/off buttons */
+	m_gpio0_row.get_widget().signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::button_clicked));
+	m_gpio1_row.get_widget().signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::button_clicked));
+	m_gpio2_row.get_widget().signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::button_clicked));
+	m_gpio3_row.get_widget().signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::button_clicked));
+
+	m_gpio0_row.get_widget().set_sensitive(0);
+	m_gpio1_row.get_widget().set_sensitive(0);
+	m_gpio2_row.get_widget().set_sensitive(0);
+	m_gpio3_row.get_widget().set_sensitive(0);
+
 	pack_start(m_gpio0_row, false, true);
 	pack_start(m_gpio1_row, false, true);
 	pack_start(m_gpio2_row, false, true);
 	pack_start(m_gpio3_row, false, true);
+
+	/* set up timer for controlling all the input gpios */
+	sigc::slot<bool> my_slot = sigc::bind(sigc::mem_fun(*this, &GpioTab::on_timeout), reference);
+	sigc::connection conn = Glib::signal_timeout().connect(my_slot, 100);
 }
 
+
 void
-GpioTab::button_clicked(Gtk::ToggleButton &button, int index)
+GpioTab::button_clicked()
 {
+	uint8_t val;
+
+	if (m_gpio->io_state & (1 << 0)) {
+		if (m_gpio0_row.get_widget().get_active()) {
+			m_gpio0_row.get_widget().set_label("on");
+			m_gpio->io_value |= (1 << 0);
+		} else {
+			m_gpio0_row.get_widget().set_label("off");
+			m_gpio->io_value &= ~(1 << 0);
+		}
+	}
+	
+	if (m_gpio->io_state & (1 << 1)) {
+		if (m_gpio1_row.get_widget().get_active()) {
+			m_gpio1_row.get_widget().set_label("on");
+			m_gpio->io_value |= (1 << 1);
+		} else {
+			m_gpio1_row.get_widget().set_label("off");
+			m_gpio->io_value &= ~(1 << 1);
+		}
+	}
+
+	if (m_gpio->io_state & (1 << 2)) {
+		if (m_gpio2_row.get_widget().get_active()) {
+			m_gpio2_row.get_widget().set_label("on");
+			m_gpio->io_value |= (1 << 2);
+		} else {
+			m_gpio2_row.get_widget().set_label("off");
+			m_gpio->io_value &= ~(1 << 2);
+		}
+	}
+
+	if (m_gpio->io_state & (1 << 3)) {
+		if (m_gpio3_row.get_widget().get_active()) {
+			m_gpio3_row.get_widget().set_label("on");
+			m_gpio->io_value |= (1 << 3);
+		} else {
+			m_gpio3_row.get_widget().set_label("off");
+			m_gpio->io_value &= ~(1 << 3);
+		}
+	}
+
+	/* clear those bits of output value "io_value" where there are input pins in "io_state" */
+	val = m_gpio->io_value & m_gpio->io_state;
+
+	m_gpio->set(val);
+}
+
+
+/* radio button for selection input or output clicked */
+void
+GpioTab::radio_clicked()
+{
+	uint8_t val;
+
+	m_gpio->io_state = 0;
+	
+	/* check radiobutton0 state - if it is input or output */
+	if (m_gpio0_row.m_radio_out.get_active()) {
+		m_gpio->io_state |= 1 << 0;			/* set as output */
+		m_gpio0_row.get_widget().set_label("off");
+	}
+	if (m_gpio1_row.m_radio_out.get_active()) {
+		m_gpio->io_state |= 1 << 1;
+		m_gpio1_row.get_widget().set_label("off");
+	}
+
+	if (m_gpio2_row.m_radio_out.get_active()) {
+		m_gpio->io_state |= 1 << 2;
+		m_gpio2_row.get_widget().set_label("off");
+	}
+
+	if (m_gpio3_row.m_radio_out.get_active()) {
+		m_gpio->io_state |= 1 << 3;
+		m_gpio3_row.get_widget().set_label("off");
+	}
+
+	/* configure GPIO basing on io_state */
+	m_gpio->configure();
+
+	/* clear those bits of output value "io_value" where there are input pins in "io_state" */
+	val = m_gpio->io_value & m_gpio->io_state;
+
+	m_gpio->set(val);
+
+	/* if in given row there is INPUT radiobutton selected - disable it (it will be grayed) */
+	m_gpio0_row.get_widget().set_sensitive(m_gpio->io_state & (1 << 0));
+	m_gpio1_row.get_widget().set_sensitive(m_gpio->io_state & (1 << 1));
+	m_gpio2_row.get_widget().set_sensitive(m_gpio->io_state & (1 << 2));
+	m_gpio3_row.get_widget().set_sensitive(m_gpio->io_state & (1 << 3));
+}
+
+
+bool
+GpioTab::on_timeout(int param)
+{
+	unsigned char rxbuf[16];
+	static unsigned char s = 0;
+	unsigned char value;
+	int st;
+
+
+	if (m_gpio == NULL) 
+		return true;
+
+	/* read all the GPIO pins */
+	st = m_gpio->m_context.read_pins(rxbuf);
+	if (st != 0) {
+		printf("fail to read st: %d\n", st);
+	}
+
+	if (!!(m_gpio->io_state & (1 << 0)) == 0) { /* check if bit0 is configured as input */
+		if (rxbuf[0] & (1 << 0))
+			m_gpio0_row.get_widget().set_label("on");
+		else 
+			m_gpio0_row.get_widget().set_label("off");
+	}
+
+	if (!!(m_gpio->io_state & (1 << 1)) == 0) {
+		if (rxbuf[0] & (1 << 1))
+			m_gpio1_row.get_widget().set_label("on");
+		else 
+			m_gpio1_row.get_widget().set_label("off");
+	}
+
+	if (!!(m_gpio->io_state & (1 << 2)) == 0) {
+		if (rxbuf[0] & (1 << 2))
+			m_gpio2_row.get_widget().set_label("on");
+		else 
+			m_gpio2_row.get_widget().set_label("off");
+	}
+
+	if (!!(m_gpio->io_state & (1 << 3)) == 0) {
+		if (rxbuf[0] & (1 << 3))
+			m_gpio3_row.get_widget().set_label("on");
+		else 
+			m_gpio3_row.get_widget().set_label("off");
+	}
+
+	return true;
 }

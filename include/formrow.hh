@@ -56,4 +56,45 @@ protected:
 	Gtk::Label m_label;
 };
 
+
+
+
+template <class T>
+class FormRowGpio: public Gtk::Box
+{
+public:
+	Gtk::RadioButton m_radio_in;
+	Gtk::RadioButton m_radio_out;
+
+	FormRowGpio(const Glib::ustring &label):
+	    Gtk::Box(Gtk::Orientation::ORIENTATION_HORIZONTAL, 10),
+	    m_label(label)
+	{
+		m_label.set_justify(Gtk::Justification::JUSTIFY_LEFT);
+		m_label.set_size_request(250, -1);
+		pack_start(m_label, false, true);
+		m_radio_in.set_label("input");
+		m_radio_out.set_label("output");
+		m_radio_out.join_group(m_radio_in);
+
+		pack_start(m_radio_in, true, true);
+		pack_start(m_radio_out, true, true);
+		pack_start(m_widget, true, true);
+		show_all_children();
+	}
+
+	T &get_widget()
+	{
+		return (m_widget);
+	}
+
+protected:
+	T m_widget;
+	Gtk::Label m_label;
+
+	void clicked();
+};
+
+
+
 #endif //DEVCLIENT_FORMROW_HH
