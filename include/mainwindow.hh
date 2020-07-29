@@ -36,14 +36,38 @@
 #include <gpio.hh>
 #include <i2c.hh>
 #include <dtb.hh>
+//#include <profile.hh>
 
 class MainWindow;
+
+
+class ProfileTab: public Gtk::Box
+{
+public:
+	ProfileTab(MainWindow *parent, const Device &dev);
+	std::shared_ptr<Gpio> m_gpio;
+
+protected:
+	void clicked();
+
+	Gtk::HBox m_h;
+	Gtk::Button m_load;
+	FormRow<Gtk::Entry> m_entry;
+	
+	uint8_t state;
+	MainWindow *m_parent;
+	const Device &m_device;
+};
 
 class SerialTab: public Gtk::Box
 {
 public:
 	SerialTab(MainWindow *parent, const Device &dev);
 
+	void set_address(std::string addr);
+	void set_port(std::string port);
+	void set_baud(std::string baud);
+	
 protected:
 	void start_clicked();
 	void stop_clicked();
@@ -81,6 +105,12 @@ class JtagTab: public Gtk::Box
 public:
 	JtagTab(MainWindow *parent, const Device &dev);
 
+	void set_address(std::string addr);
+	void set_ocd_port(std::string port);
+	void set_gdb_port(std::string port);
+	void set_script(std::string script);
+	
+	
 protected:
 	void start_clicked();
 	void stop_clicked();
@@ -150,6 +180,8 @@ public:
 	GpioTab(MainWindow *parent, const Device &dev);
 	std::shared_ptr<Gpio> m_gpio;
 
+	void set_gpio_name(int no, std::string name);
+	
 protected:
 	void button_clicked();
 
@@ -179,8 +211,18 @@ public:
 	Gpio *m_gpio;
 	I2C *m_i2c;
 	
+	void set_gpio_name(int no, std::string name);
+	void set_uart_addr(std::string addr);
+	void set_uart_port(std::string port);
+	void set_uart_baud(std::string baud);
+	void set_jtag_addr(std::string addr);
+	void set_jtag_gdb_port(std::string port);
+	void set_jtag_ocd_port(std::string port);
+	void set_jtag_script(std::string script);
+	
 protected:
 	Gtk::Notebook m_notebook;
+	ProfileTab m_profile;
 	SerialTab m_uart_tab;
 	JtagTab m_jtag_tab;
 	EepromTab m_eeprom_tab;

@@ -65,6 +65,7 @@ class FormRowGpio: public Gtk::Box
 public:
 	Gtk::RadioButton m_radio_in;
 	Gtk::RadioButton m_radio_out;
+	Gtk::Image image;
 
 	FormRowGpio(const Glib::ustring &label):
 	    Gtk::Box(Gtk::Orientation::ORIENTATION_HORIZONTAL, 10),
@@ -80,6 +81,7 @@ public:
 		pack_start(m_radio_in, true, true);
 		pack_start(m_radio_out, true, true);
 		pack_start(m_widget, true, true);
+		pack_start(image, false, false);
 		show_all_children();
 	}
 
@@ -88,6 +90,13 @@ public:
 		return (m_widget);
 	}
 
+	void set_gpio_name(std::string name)
+	{
+		m_label.set_label(name);
+		
+	}
+	
+	
 protected:
 	T m_widget;
 	Gtk::Label m_label;

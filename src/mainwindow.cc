@@ -37,17 +37,21 @@
 #include <eeprom/24c.hh>
 #include <mainwindow.hh>
 #include <application.hh>
+#include <ucl.h>
+#include <filesystem>
+
 
 MainWindow::MainWindow():
     m_uart_tab(this, m_device),
     m_jtag_tab(this, m_device),
     m_eeprom_tab(this, m_device),
-    m_gpio_tab(this, m_device)
+    m_gpio_tab(this, m_device),
+    m_profile(this, m_device)
 {
 	set_title("Conclusive developer cable client");
 	set_size_request(640, 480);
 	set_position(Gtk::WIN_POS_CENTER_ALWAYS);
-	
+	m_notebook.append_page(m_profile, "Profile");
 	m_notebook.append_page(m_uart_tab, "Serial console");
 	m_notebook.append_page(m_jtag_tab, "JTAG");
 	m_notebook.append_page(m_eeprom_tab, "EEPROM");
@@ -62,6 +66,13 @@ MainWindow::MainWindow():
 }
 
 MainWindow::~MainWindow() {}
+
+
+void
+MainWindow::set_gpio_name(int no, std::string name)
+{
+	m_gpio_tab.set_gpio_name(no, name);
+}
 
 void
 MainWindow::show_deviceselect_dialog()
@@ -82,12 +93,115 @@ MainWindow::configure_devices(const Device &device)
 	try {
 		m_i2c = new I2C(m_device, 100000);
 		m_gpio = new Gpio(m_device);
-		printf("m_gpio: %#lx\n", m_gpio);
 		m_gpio->set(0);
 	} catch (const std::runtime_error &err) {
 		show_centered_dialog("Error", err.what());
 		exit(1);
 	}
+}
+
+ProfileTab::ProfileTab(MainWindow *parent, const Device &dev):
+    Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
+    m_device(dev),
+    m_load("Load profile"),
+    m_parent(parent),
+    m_entry("Loaded profile")
+{
+	m_load.signal_clicked().connect(sigc::mem_fun(*this, &ProfileTab::clicked));
+	m_entry.get_widget().set_editable(false);
+	m_entry.get_widget().set_text("<none>");
+	pack_start(m_entry, false, false);
+	pack_end(m_load, false, false);
+}
+
+/* "load profile" button maintenance */
+void
+ProfileTab::clicked()
+{
+	int res;
+	std::string fname;
+	ucl_parser *parser;
+	const ucl_object_t *root, *uart, *jtag, *eeprom, *ptr, *device, *serial;
+	const ucl_object_t *baud, *uart_ip, *uart_port;
+	const ucl_object_t *jtag_ip, *gdb_port, *telnet_port, *pass_through, *jtag_script;
+	const ucl_object_t *gpio, *name0, *name1, *name2, *name3;
+	std::string uart_listen_addr;
+	uint32_t baudrate_value;
+
+	ucl_object_iter_t it;
+
+	Gtk::FileChooserDialog d_file("Choose profile");
+
+	d_file.add_button("Select", Gtk::RESPONSE_OK);
+	d_file.add_button("Cancel", Gtk::RESPONSE_CANCEL);
+
+	res = d_file.run();
+
+	switch (res) {
+		case Gtk::RESPONSE_OK:
+			fname = d_file.get_filename();
+			break;
+		case Gtk::RESPONSE_CANCEL:
+			fname.clear();
+			break;
+	}
+
+	parser = ucl_parser_new(0);
+	if (!ucl_parser_add_file(parser, fname.c_str())) {
+		Gtk::MessageDialog *error_dialog = new Gtk::MessageDialog("Error loading profile file", false);
+		error_dialog->set_title("Error");
+		error_dialog->set_secondary_text(ucl_parser_get_error(parser));
+		error_dialog->run();
+		delete error_dialog;
+		return;
+	}
+
+	root = ucl_parser_get_object(parser);
+	device =  ucl_object_lookup(root, "device");
+
+	serial = ucl_object_lookup(device, "serial");
+
+	/* parse UART */
+	uart = ucl_object_lookup(device, "uart");
+	baud = ucl_object_lookup(uart, "baudrate");
+	baudrate_value = ucl_object_toint(baud);
+	uart_ip = ucl_object_lookup(uart, "listen_ip");
+	uart_port = ucl_object_lookup(uart, "listen_port");
+
+	/* parse JTAG */
+	jtag = ucl_object_lookup(device, "jtag");
+	jtag_ip = ucl_object_lookup(jtag, "listen_ip");
+	gdb_port = ucl_object_lookup(jtag, "gdb_port");
+	telnet_port = ucl_object_lookup(jtag, "telnet_port");
+	pass_through = ucl_object_lookup(jtag, "pass_through");
+	jtag_script = ucl_object_lookup(jtag, "script");
+
+	/* parse GPIO */
+	gpio = ucl_object_lookup(device, "gpio");
+	name0 = ucl_object_lookup(gpio, "gpio0");
+	name1 = ucl_object_lookup(gpio, "gpio1");
+	name2 = ucl_object_lookup(gpio, "gpio2");
+	name3 = ucl_object_lookup(gpio, "gpio3");
+
+	/* set UART parameters */
+	m_parent->set_uart_addr(ucl_object_tostring(uart_ip));
+	m_parent->set_uart_port(std::to_string(ucl_object_toint(uart_port)));
+	m_parent->set_uart_baud(std::to_string(ucl_object_toint(baud)));
+
+	/* set JTAG parameters */
+	m_parent->set_jtag_addr(ucl_object_tostring(jtag_ip));
+	m_parent->set_jtag_ocd_port(std::to_string(ucl_object_toint(telnet_port)));
+	m_parent->set_jtag_gdb_port(std::to_string(ucl_object_toint(gdb_port)));
+	m_parent->set_jtag_script(ucl_object_tostring(jtag_script));
+
+	/* set GPIO parameters */
+	m_parent->set_gpio_name(0, ucl_object_tostring(name0));
+	m_parent->set_gpio_name(1, ucl_object_tostring(name1));
+	m_parent->set_gpio_name(2, ucl_object_tostring(name2));
+	m_parent->set_gpio_name(3, ucl_object_tostring(name3));
+
+	/* show file name in profile tab */
+	m_entry.get_widget().set_text(std::filesystem::path(fname).filename().c_str());
 }
 
 SerialTab::SerialTab(MainWindow *parent, const Device &dev):
@@ -253,6 +367,21 @@ void SerialTab::on_address_changed()
 	m_addr_changed_conn.block();
 	m_address_row.get_widget().set_text(output);
 	m_addr_changed_conn.unblock();
+}
+
+void SerialTab::set_address(std::string addr)
+{
+	m_address_row.get_widget().set_text(addr);
+}
+
+void SerialTab::set_port(std::string port)
+{
+	m_port_row.get_widget().set_text(port);
+}
+
+void SerialTab::set_baud(std::string baud)
+{
+	m_baud_row.get_widget().set_active_text(baud);
 }
 
 void SerialTab::on_port_changed()
@@ -450,6 +579,26 @@ void JtagTab::on_gdb_port_changed()
 	m_gdb_port_changed_conn.unblock();
 }
 
+void JtagTab::set_address(std::string addr)
+{
+	m_address_row.get_widget().set_text(addr);
+}
+
+void JtagTab::set_ocd_port(std::string port)
+{
+	m_ocd_port_row.get_widget().set_text(port);
+}
+
+void JtagTab::set_gdb_port(std::string port)
+{
+	m_gdb_port_row.get_widget().set_text(port);
+}
+
+void JtagTab::set_script(std::string script)
+{
+	m_board_row.get_widget().set_filename(script);
+}
+
 EepromTab::EepromTab(MainWindow *parent, const Device &dev):
 	Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
 	m_device(dev),
@@ -565,7 +714,6 @@ EepromTab::decompile_done(bool ok, int size, const std::string &errors)
 	}
 }
 
-
 GpioTab::GpioTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
     m_gpio0_row("GPIO 0"),
@@ -580,7 +728,12 @@ GpioTab::GpioTab(MainWindow *parent, const Device &dev):
 	m_gpio2_row.get_widget().set_label("off");
 	m_gpio3_row.get_widget().set_label("off");
 
-	/* connect signal to raido buttons */
+	m_gpio0_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
+	m_gpio1_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
+	m_gpio2_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
+	m_gpio3_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
+
+	/* connect signal to radio buttons */
 	m_gpio0_row.m_radio_in.signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::radio_clicked));
 	m_gpio1_row.m_radio_in.signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::radio_clicked));
 	m_gpio2_row.m_radio_in.signal_toggled().connect(sigc::mem_fun(*this, &GpioTab::radio_clicked));
@@ -608,6 +761,7 @@ GpioTab::GpioTab(MainWindow *parent, const Device &dev):
 }
 
 
+/* on/off button clicked */
 void
 GpioTab::button_clicked()
 {
@@ -616,19 +770,23 @@ GpioTab::button_clicked()
 	if (m_gpio->io_state & (1 << 0)) {
 		if (m_gpio0_row.get_widget().get_active()) {
 			m_gpio0_row.get_widget().set_label("on");
+			m_gpio0_row.image.set_from_icon_name("gtk-yes", Gtk::ICON_SIZE_BUTTON);
 			m_gpio->io_value |= (1 << 0);
 		} else {
 			m_gpio0_row.get_widget().set_label("off");
+			m_gpio0_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
 			m_gpio->io_value &= ~(1 << 0);
 		}
 	}
-	
+
 	if (m_gpio->io_state & (1 << 1)) {
 		if (m_gpio1_row.get_widget().get_active()) {
 			m_gpio1_row.get_widget().set_label("on");
+			m_gpio1_row.image.set_from_icon_name("gtk-yes", Gtk::ICON_SIZE_BUTTON);
 			m_gpio->io_value |= (1 << 1);
 		} else {
 			m_gpio1_row.get_widget().set_label("off");
+			m_gpio1_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
 			m_gpio->io_value &= ~(1 << 1);
 		}
 	}
@@ -636,9 +794,11 @@ GpioTab::button_clicked()
 	if (m_gpio->io_state & (1 << 2)) {
 		if (m_gpio2_row.get_widget().get_active()) {
 			m_gpio2_row.get_widget().set_label("on");
+			m_gpio2_row.image.set_from_icon_name("gtk-yes", Gtk::ICON_SIZE_BUTTON);
 			m_gpio->io_value |= (1 << 2);
 		} else {
 			m_gpio2_row.get_widget().set_label("off");
+			m_gpio2_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
 			m_gpio->io_value &= ~(1 << 2);
 		}
 	}
@@ -646,9 +806,11 @@ GpioTab::button_clicked()
 	if (m_gpio->io_state & (1 << 3)) {
 		if (m_gpio3_row.get_widget().get_active()) {
 			m_gpio3_row.get_widget().set_label("on");
+			m_gpio3_row.image.set_from_icon_name("gtk-yes", Gtk::ICON_SIZE_BUTTON);
 			m_gpio->io_value |= (1 << 3);
 		} else {
 			m_gpio3_row.get_widget().set_label("off");
+			m_gpio3_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
 			m_gpio->io_value &= ~(1 << 3);
 		}
 	}
@@ -658,7 +820,6 @@ GpioTab::button_clicked()
 
 	m_gpio->set(val);
 }
-
 
 /* radio button for selection input or output clicked */
 void
@@ -672,20 +833,24 @@ GpioTab::radio_clicked()
 	if (m_gpio0_row.m_radio_out.get_active()) {
 		m_gpio->io_state |= 1 << 0;			/* set as output */
 		m_gpio0_row.get_widget().set_label("off");
+		m_gpio0_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
 	}
 	if (m_gpio1_row.m_radio_out.get_active()) {
 		m_gpio->io_state |= 1 << 1;
 		m_gpio1_row.get_widget().set_label("off");
+		m_gpio1_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
 	}
 
 	if (m_gpio2_row.m_radio_out.get_active()) {
 		m_gpio->io_state |= 1 << 2;
 		m_gpio2_row.get_widget().set_label("off");
+		m_gpio2_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
 	}
 
 	if (m_gpio3_row.m_radio_out.get_active()) {
 		m_gpio->io_state |= 1 << 3;
 		m_gpio3_row.get_widget().set_label("off");
+		m_gpio3_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
 	}
 
 	/* configure GPIO basing on io_state */
@@ -702,7 +867,6 @@ GpioTab::radio_clicked()
 	m_gpio2_row.get_widget().set_sensitive(m_gpio->io_state & (1 << 2));
 	m_gpio3_row.get_widget().set_sensitive(m_gpio->io_state & (1 << 3));
 }
-
 
 bool
 GpioTab::on_timeout(int param)
@@ -723,32 +887,116 @@ GpioTab::on_timeout(int param)
 	}
 
 	if (!!(m_gpio->io_state & (1 << 0)) == 0) { /* check if bit0 is configured as input */
-		if (rxbuf[0] & (1 << 0))
+		if (rxbuf[0] & (1 << 0)) {
 			m_gpio0_row.get_widget().set_label("on");
-		else 
+		} else  {
 			m_gpio0_row.get_widget().set_label("off");
+		}
 	}
 
 	if (!!(m_gpio->io_state & (1 << 1)) == 0) {
-		if (rxbuf[0] & (1 << 1))
+		if (rxbuf[0] & (1 << 1)) {
 			m_gpio1_row.get_widget().set_label("on");
-		else 
+		} else {
 			m_gpio1_row.get_widget().set_label("off");
+		}
 	}
 
 	if (!!(m_gpio->io_state & (1 << 2)) == 0) {
-		if (rxbuf[0] & (1 << 2))
+		if (rxbuf[0] & (1 << 2)) {
 			m_gpio2_row.get_widget().set_label("on");
-		else 
+		} else {
 			m_gpio2_row.get_widget().set_label("off");
+		}
 	}
 
 	if (!!(m_gpio->io_state & (1 << 3)) == 0) {
-		if (rxbuf[0] & (1 << 3))
+		if (rxbuf[0] & (1 << 3)) {
 			m_gpio3_row.get_widget().set_label("on");
-		else 
+		} else {
 			m_gpio3_row.get_widget().set_label("off");
+		}
+	}
+
+	/* set red/green GPIO level state indicators */
+	if (rxbuf[0] & (1 << 0)) {
+		m_gpio0_row.image.set_from_icon_name("gtk-yes", Gtk::ICON_SIZE_BUTTON);
+	} else  {
+		m_gpio0_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
+	}
+
+	if (rxbuf[0] & (1 << 1)) {
+		m_gpio1_row.image.set_from_icon_name("gtk-yes", Gtk::ICON_SIZE_BUTTON);
+	} else {
+		m_gpio1_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
+	}
+
+	if (rxbuf[0] & (1 << 2)) {
+		m_gpio2_row.image.set_from_icon_name("gtk-yes", Gtk::ICON_SIZE_BUTTON);
+	} else {
+		m_gpio2_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
+	}
+
+	if (rxbuf[0] & (1 << 3)) {
+		m_gpio3_row.image.set_from_icon_name("gtk-yes", Gtk::ICON_SIZE_BUTTON);
+	} else {
+		m_gpio3_row.image.set_from_icon_name("gtk-no", Gtk::ICON_SIZE_BUTTON);
 	}
 
 	return true;
+}
+
+void
+GpioTab::set_gpio_name(int no, std::string name)
+{
+	if (no == 0) {
+		m_gpio0_row.set_gpio_name(name);
+	}
+
+	if (no == 1) {
+		m_gpio1_row.set_gpio_name(name);
+	}
+
+	if (no == 2) {
+		m_gpio2_row.set_gpio_name(name);
+	}
+
+	if (no == 3) {
+		m_gpio3_row.set_gpio_name(name);
+	}
+}
+
+void MainWindow::set_uart_addr(std::string addr)
+{
+	m_uart_tab.set_address(addr);
+}
+
+void MainWindow::set_uart_port(std::string port)
+{
+	m_uart_tab.set_port(port);
+}
+
+void MainWindow::set_uart_baud(std::string baud)
+{
+	m_uart_tab.set_baud(baud);
+}
+
+void MainWindow::set_jtag_addr(std::string addr)
+{
+	m_jtag_tab.set_address(addr);
+}
+
+void MainWindow::set_jtag_ocd_port(std::string port)
+{
+	m_jtag_tab.set_ocd_port(port);
+}
+
+void MainWindow::set_jtag_gdb_port(std::string port)
+{
+	m_jtag_tab.set_gdb_port(port);
+}
+
+void MainWindow::set_jtag_script(std::string script)
+{
+	m_jtag_tab.set_script(script);
 }
