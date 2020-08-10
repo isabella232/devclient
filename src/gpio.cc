@@ -34,8 +34,6 @@
 
 Gpio::Gpio(const Device &device)
 {
-	uint8_t value = 0;
-
 	/* set all the GPIO to input - clear all the bits */
 	io_state = 0x00;
 

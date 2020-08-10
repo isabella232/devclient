@@ -37,8 +37,8 @@
 
 DTB::DTB( std::shared_ptr<std::string> &dts,
     std::shared_ptr<std::vector<uint8_t>> &dtb):
-    m_dts(dts),
-    m_dtb(dtb)
+    m_dtb(dtb),
+    m_dts(dts)
 {
 }
 

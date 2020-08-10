@@ -58,8 +58,6 @@ SerialCmdLine::SerialCmdLine(const Device &device, const Glib::RefPtr<Gio::Socke
 void
 SerialCmdLine::start(void)
 {
-	int baud;
-
 	if (m_uart)
 		return;
 
@@ -185,8 +183,8 @@ JtagCmdLine::on_output_ready(const std::string &output)
 
 
 JtagCmdLine::JtagCmdLine(const Device &device, Glib::RefPtr<Gio::InetAddress> address, uint16_t gdb_port,  uint16_t ocd_port, const std::string &board_script) :
-    m_address(address),
     m_device(device),
+    m_address(address),
     m_ocd_port(ocd_port),
     m_gdb_port(gdb_port),
     m_board_script(board_script),

@@ -44,8 +44,8 @@
 JtagServer::JtagServer(const Device &device,
     Glib::RefPtr<Gio::InetAddress> address, uint16_t gdb_port,
     uint16_t ocd_port, const std::string &board_script):
-    m_address(address),
     m_device(device),
+    m_address(address),
     m_ocd_port(ocd_port),
     m_gdb_port(gdb_port),
     m_board_script(board_script),

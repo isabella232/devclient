@@ -50,11 +50,11 @@ using namespace std;
 
 
 MainWindow::MainWindow():
+    m_profile(this, m_device),
     m_uart_tab(this, m_device),
     m_jtag_tab(this, m_device),
     m_eeprom_tab(this, m_device),
-    m_gpio_tab(this, m_device),
-    m_profile(this, m_device)
+    m_gpio_tab(this, m_device)
 {
 	set_title("Conclusive developer cable client");
 	set_size_request(640, 480);
@@ -110,10 +110,10 @@ MainWindow::configure_devices(const Device &device)
 
 ProfileTab::ProfileTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
-    m_device(dev),
     m_load("Load profile"),
+    m_entry("Loaded profile"),
     m_parent(parent),
-    m_entry("Loaded profile")
+    m_device(dev)
 {
 	m_load.signal_clicked().connect(sigc::mem_fun(*this, &ProfileTab::clicked));
 	m_entry.get_widget().set_editable(false);
@@ -131,12 +131,12 @@ ProfileTab::clicked()
 	int res;
 	std::string fname;
 	ucl_parser *parser;
-	const ucl_object_t *root, *uart, *jtag, *device, *serial;
+	const ucl_object_t *root, *uart, *jtag, *device;
 	const ucl_object_t *baud, *uart_ip, *uart_port;
-	const ucl_object_t *jtag_ip, *gdb_port, *telnet_port, *pass_through, *jtag_script;
+	const ucl_object_t *jtag_ip, *gdb_port, *telnet_port, *jtag_script;
 	const ucl_object_t *gpio, *name0, *name1, *name2, *name3;
 	std::string uart_listen_addr;
-	uint32_t baudrate_value;
+//	uint32_t baudrate_value;
 
 
 	Gtk::FileChooserDialog d_file("Choose profile");
@@ -168,12 +168,10 @@ ProfileTab::clicked()
 	root = ucl_parser_get_object(parser);
 	device =  ucl_object_lookup(root, "device");
 
-	serial = ucl_object_lookup(device, "serial");
-
 	/* parse UART */
 	uart = ucl_object_lookup(device, "uart");
 	baud = ucl_object_lookup(uart, "baudrate");
-	baudrate_value = ucl_object_toint(baud);
+//	baudrate_value = ucl_object_toint(baud);
 	uart_ip = ucl_object_lookup(uart, "listen_ip");
 	uart_port = ucl_object_lookup(uart, "listen_port");
 
@@ -182,7 +180,7 @@ ProfileTab::clicked()
 	jtag_ip = ucl_object_lookup(jtag, "listen_ip");
 	gdb_port = ucl_object_lookup(jtag, "gdb_port");
 	telnet_port = ucl_object_lookup(jtag, "telnet_port");
-	pass_through = ucl_object_lookup(jtag, "pass_through");
+//	pass_through = ucl_object_lookup(jtag, "pass_through");
 	jtag_script = ucl_object_lookup(jtag, "script");
 
 	/* parse GPIO */
@@ -215,17 +213,17 @@ ProfileTab::clicked()
 
 SerialTab::SerialTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
-    m_device(dev),
     m_address_row("Listen address"),
     m_port_row("Listen port"),
     m_baud_row("Port baud rate"),
     m_status_row("Status"),
+    m_label("Connected clients:"),
     m_clients(1),
     m_start("Start"),
     m_stop("Stop"),
     m_terminal("Launch terminal"),
-    m_label("Connected clients:"),
-    m_parent(parent)
+    m_parent(parent),
+    m_device(dev)
 {
 	m_address_row.get_widget().set_text("127.0.0.1");
 	m_addr_changed_conn = m_address_row
@@ -405,7 +403,6 @@ void SerialTab::on_port_changed()
 
 JtagTab::JtagTab(MainWindow *parent, const Device &dev):
     Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
-    m_device(dev),
     m_address_row("Listen address"),
     m_gdb_port_row("GDB server listen port"),
     m_ocd_port_row("OpenOCD listen port"),
@@ -415,7 +412,8 @@ JtagTab::JtagTab(MainWindow *parent, const Device &dev):
     m_stop("Stop"),
     m_reset("Reset target"),
     m_bypass("J-Link bypass mode"),
-    m_parent(parent)
+    m_parent(parent),
+    m_device(dev)
 {
 	Pango::FontDescription font("Monospace 9");
 
@@ -610,11 +608,11 @@ void JtagTab::set_script(std::string script)
 
 EepromTab::EepromTab(MainWindow *parent, const Device &dev):
 	Gtk::Box(Gtk::Orientation::ORIENTATION_VERTICAL),
-	m_device(dev),
 	m_read("Read"),
 	m_write("Write"),
 	m_save("Save buffer to file"),
-	m_parent(parent)
+	m_parent(parent),
+	m_device(dev)
 {
 	Pango::FontDescription font("Monospace 9");
 
