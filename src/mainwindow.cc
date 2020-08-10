@@ -363,6 +363,7 @@ SerialTab::client_disconnected(Glib::RefPtr<Gio::SocketAddress> addr)
 		it->get_value(0, result);
 		if (result == addr_s)
 			store->erase(it);
+		return true;
 	});
 }
 
