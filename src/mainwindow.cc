@@ -38,7 +38,15 @@
 #include <mainwindow.hh>
 #include <application.hh>
 #include <ucl.h>
+
+
+#if __cplusplus <= 201703L
+#include <experimental/filesystem>
+using namespace std::experimental;
+#else
 #include <filesystem>
+using namespace std;
+#endif
 
 
 MainWindow::MainWindow():
@@ -114,6 +122,8 @@ ProfileTab::ProfileTab(MainWindow *parent, const Device &dev):
 	pack_end(m_load, false, false);
 }
 
+
+
 /* "load profile" button maintenance */
 void
 ProfileTab::clicked()
@@ -121,14 +131,13 @@ ProfileTab::clicked()
 	int res;
 	std::string fname;
 	ucl_parser *parser;
-	const ucl_object_t *root, *uart, *jtag, *eeprom, *ptr, *device, *serial;
+	const ucl_object_t *root, *uart, *jtag, *device, *serial;
 	const ucl_object_t *baud, *uart_ip, *uart_port;
 	const ucl_object_t *jtag_ip, *gdb_port, *telnet_port, *pass_through, *jtag_script;
 	const ucl_object_t *gpio, *name0, *name1, *name2, *name3;
 	std::string uart_listen_addr;
 	uint32_t baudrate_value;
 
-	ucl_object_iter_t it;
 
 	Gtk::FileChooserDialog d_file("Choose profile");
 
@@ -201,7 +210,7 @@ ProfileTab::clicked()
 	m_parent->set_gpio_name(3, ucl_object_tostring(name3));
 
 	/* show file name in profile tab */
-	m_entry.get_widget().set_text(std::filesystem::path(fname).filename().c_str());
+	m_entry.get_widget().set_text(filesystem::path(fname).filename().c_str());
 }
 
 SerialTab::SerialTab(MainWindow *parent, const Device &dev):
@@ -872,8 +881,6 @@ bool
 GpioTab::on_timeout(int param)
 {
 	unsigned char rxbuf[16];
-	static unsigned char s = 0;
-	unsigned char value;
 	int st;
 
 

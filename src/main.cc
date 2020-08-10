@@ -180,13 +180,11 @@ int
 parse_config_file(std::string file_read, std::shared_ptr<SerialCmdLine> &serial_cmd, std::shared_ptr<JtagCmdLine> &jtag_cmd)
 {
 	ucl_parser *parser;
-	const ucl_object_t *root, *uart, *jtag, *eeprom, *gpio, *ptr, *device, *serial;
+	const ucl_object_t *root, *uart, *jtag, *device, *serial;
 	const ucl_object_t *baud, *uart_ip, *uart_port;
 	const ucl_object_t *jtag_ip, *gdb_port, *telnet_port, *pass_through, *jtag_script;
 	std::string uart_listen_addr;
 	uint32_t baudrate_value;
-
-	ucl_object_iter_t it;
 
 	parser = ucl_parser_new(0);
 	if (!ucl_parser_add_file(parser, file_read.c_str()))
@@ -384,7 +382,7 @@ parse_cmdline(int argc, char *const argv[], std::shared_ptr<SerialCmdLine> &seri
 		f_in.open(file_read, ios::in | ios::binary);
 		f_in.read(rdata, 4096);
 		f_in.close();
-		for (int x = 0; x < sizeof(rdata); x++)
+		for (unsigned int x = 0; x < sizeof(rdata); x++)
 			data.push_back(rdata[x]);
 		eeprom.write(0, data);
 		exit(0);
@@ -428,7 +426,7 @@ parse_cmdline(int argc, char *const argv[], std::shared_ptr<SerialCmdLine> &seri
 		f_in.open(fname, ios::in | ios::binary);
 		f_in.read(rdata, 4096);
 		f_in.close();
-		for (int x = 0; x < sizeof(rdata); x++)
+		for (unsigned int x = 0; x < sizeof(rdata); x++)
 			data.push_back(rdata[x]);
 		std::remove(fname);
 
